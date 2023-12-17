@@ -1,6 +1,6 @@
 {
   "name": "raw-thermal-print",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "js package providing an abstraction over different thermal printer languages",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -30,6 +30,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@types/w3c-web-usb": "^1.0.10"
+    "@types/w3c-web-usb": "^1.0.10",
+    "image-pixels": "^2.2.2"
   }
 }
