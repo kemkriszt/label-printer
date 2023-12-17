@@ -5,15 +5,15 @@ import TSPLVisualCommand from "../TSPLVisualCommand";
  * {@link /documentsions/TSPL.pdf}
  */
 export default class TSPLBarCommand extends TSPLVisualCommand {
-    /**
-     * Width of the bar in dots
-     */
     private readonly width: number
-    /**
-     * Height of the bar in dots
-     */
     private readonly height: number
 
+    /**
+     * @param x X coordinates in dots
+     * @param y  Y coordinates in dots
+     * @param width Width of tha bar in dots
+     * @param height Height of the bar in dots
+     */
     constructor(x: number, y: number, width: number, height: number) {
         super(x,y)
         this.width = width

@@ -13,14 +13,16 @@ export default class TSPLBitmapCommand extends TSPLVisualCommand {
      * and 0 (Black pixel) values
      */
     private readonly bitmap: BWBitmap
-    /**
-     * Represents the strategy to use when two bitmaps overlap. The final value will be determined by
-     * either overwriting the first bitmap's value with the second one or performing an 'or' or 'xor' operation
-     * on the values
-     */
     private readonly mode: GraphicMode
     
-
+    /**
+     * 
+     * @param bitmap Bitmap to present. 
+     * @param x X coordinates in dots
+     * @param y Y Coordinates in dots
+     * @param mode Represents the strategy to use when two bitmaps overlap. The final value will be determined by
+     * either overwriting the first bitmap's value with the second one or performing an 'or' or 'xor' operation on the values
+     */
     constructor(bitmap: BWBitmap, x: number, y: number, mode?: GraphicMode) {
         super(x, y);
         this.bitmap = bitmap;
