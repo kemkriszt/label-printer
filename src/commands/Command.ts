@@ -25,7 +25,7 @@ export default abstract class Command {
      * Byte representation of a newline
      */
     protected get commandTerminatorBytes(): Uint8Array {
-        return new Uint8Array(10)
+        return new Uint8Array([10])
     }
 
     /**

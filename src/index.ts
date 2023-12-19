@@ -1,5 +1,1 @@
-export * from "./commands"
-
-export function add(a: number, b: number): number {
-    return a + b;
-}
+export * as commands from "./commands"
