@@ -1,4 +1,4 @@
-import { TSPLPrintCommand } from "@/commands"
+import { TSPLRawCommand } from "@/commands"
 import MockUSBDevice from "./mocks/MockUSBDevice"
 
 import StringUtils from "@/helpers/StringUtils"
@@ -10,7 +10,7 @@ test("Test command write", () => {
     const testBytes = utils.toUTF8Array(testString)
     const testEndBytes =  utils.toUTF8Array(testEndString)
 
-    const printCommand = new TSPLPrintCommand(1)
+    const printCommand = new TSPLRawCommand(testString)
     let callIndex = 0
     MockUSBDevice.writeCallback = ((bytes: BufferSource) => {
         if (callIndex == 0) {
