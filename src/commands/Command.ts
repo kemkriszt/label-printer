@@ -1,12 +1,10 @@
-import StringUtils from "@/helpers/StringUtils"
+import { UsbDevice } from "@/helpers/USBUtils"
 
 /**
  * Base implementation for all types of command
  * Represents a command to be send to the printer to execute, such as print
  */
 export default abstract class Command {
-    private stringHelper = new StringUtils()
-
     /**
      * Returns a string representation of the command
      */
@@ -16,7 +14,7 @@ export default abstract class Command {
      * Write the command data to a USB device
      * @param device Device to write to
      */
-    async write(device: USBDevice): Promise<void> {
+    async write(device: UsbDevice): Promise<void> {
         await this.writeString(this.commandString, device)
         await this.terminateCommand(device)
     }
@@ -33,9 +31,8 @@ export default abstract class Command {
      * @param data String representation of data
      * @param device Device to write to
      */
-    protected async writeString(data: string, device: USBDevice): Promise<void> {
-        const bytes = this.stringHelper.toUTF8Array(data)
-        await this.writeBytes(bytes, device)
+    protected async writeString(data: string, device: UsbDevice): Promise<void> {
+        await device.writeString(data)
     }
 
     /**
@@ -43,16 +40,15 @@ export default abstract class Command {
      * @param data Byte array to send
      * @param device Device to write to
      */
-    protected async writeBytes(data: Uint8Array, device: USBDevice): Promise<void> {
-        const { endpointNumber } = device.configuration!.interfaces[0].alternate.endpoints[0]
-        await device.transferOut(endpointNumber, data)
+    protected async writeBytes(data: Uint8Array, device: UsbDevice): Promise<void> {
+        await device.writeData(data)
     }
 
     /**
      * Write the command terminator to the device
      * @param device 
      */
-    protected async terminateCommand(device: USBDevice): Promise<void> {
+    protected async terminateCommand(device: UsbDevice): Promise<void> {
         await this.writeBytes(this.commandTerminatorBytes, device)
     }
 }
