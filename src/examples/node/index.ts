@@ -1,5 +1,5 @@
 import { usbAgent } from "@/helpers/USBUtils"
-import { PrinterService } from "@/printers/PrinterService"
+import { PrinterService } from "@/printers"
 
 export default async () => {
     const devices = await usbAgent.getDevices()

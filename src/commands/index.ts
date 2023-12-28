@@ -3,4 +3,4 @@ export { default as CommandGroup } from "./CommandGroup"
 
 export type PrinterLanguage = "tspl"
 
-export * from "./tspl"
+export * as tspl from "./tspl"
