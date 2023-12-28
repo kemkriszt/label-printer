@@ -13,6 +13,7 @@ export default abstract class Printer {
     abstract get language(): PrinterLanguage
 
     constructor(device: UsbDevice) {
+        if(!device.opened) device.openAndConfigure()
         this.usbDevice = device
     }
 

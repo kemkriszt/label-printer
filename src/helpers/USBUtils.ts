@@ -19,7 +19,7 @@ const getUSB = (): USB => {
     return new WebUSB({allowAllDevices: true})
 }
 
-const usbAgent = getUSB()
+export const usbAgent = getUSB()
 
 /**
  * @returns A list of available devices
@@ -34,6 +34,10 @@ export const getDevices = async (): Promise<UsbDevice[]> => {
  */
 export class UsbDevice {
     private readonly device: USBDevice
+
+    get opened() {
+        return this.device.opened
+    }
 
     /**
      * All available endpoints
@@ -82,6 +86,7 @@ export class UsbDevice {
      */
     async writeData(data: Uint8Array): Promise<void> {
         const endpointNumber = this.outEndpoint
+        console.log(endpointNumber)
         await this.device.transferOut(endpointNumber!, data)
     }
 
