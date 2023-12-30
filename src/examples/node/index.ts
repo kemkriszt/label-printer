@@ -7,5 +7,6 @@ export default async () => {
     if(printers.length > 0) {
         const printer = printers[0]
         await printer.feedLabel()
+        await printer.close()
     }
 }

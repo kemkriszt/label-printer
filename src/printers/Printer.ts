@@ -22,6 +22,13 @@ export default abstract class Printer {
     }
 
     /**
+     * Close the printer USB
+     */
+    async close() {
+        await this.usbDevice.close()
+    }
+
+    /**
      * Writes a command to the printers usb
      * @param command Command to send to the usb
      */
