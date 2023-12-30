@@ -1,4 +1,4 @@
-# Raw Thermal Print
+# Label Print
 
 This package provides a js based implementation for variouse languages used for label printers
 
