@@ -12,8 +12,12 @@ export default abstract class Printer {
      */
     abstract get language(): PrinterLanguage
 
+    /**
+     * When called, it will feed the labels to the beginig of the next label
+     */
+    abstract feedLabel(): Promise<void>
+
     constructor(device: UsbDevice) {
-        if(!device.opened) device.openAndConfigure()
         this.usbDevice = device
     }
 
@@ -22,6 +26,7 @@ export default abstract class Printer {
      * @param command Command to send to the usb
      */
     protected async writeCommand(command: Command): Promise<void> {
+        if(!this.usbDevice.opened) await this.usbDevice.openAndConfigure()
         await command.write(this.usbDevice)
     }
 

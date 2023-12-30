@@ -31,6 +31,8 @@ export const getDevices = async (): Promise<UsbDevice[]> => {
 
 /**
  * Convenience wrapper for a web usb device
+ * Its main purpose is to hide the details of the usb library from client code so in case
+ * it needs to be switched, compatibility can be retained
  */
 export class UsbDevice {
     private readonly device: USBDevice
@@ -77,6 +79,7 @@ export class UsbDevice {
      * Closes the device
      */
     async close() {
+        await this.device.releaseInterface(0)
         await this.device.close()
     }
 
@@ -86,7 +89,6 @@ export class UsbDevice {
      */
     async writeData(data: Uint8Array): Promise<void> {
         const endpointNumber = this.outEndpoint
-        console.log(endpointNumber)
         await this.device.transferOut(endpointNumber!, data)
     }
 
