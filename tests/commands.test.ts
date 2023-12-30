@@ -1,7 +1,8 @@
-import { TSPLRawCommand } from "@/commands"
+import { TSPLRawCommand } from "@/commands/tspl"
 import MockUSBDevice from "./mocks/MockUSBDevice"
 
 import StringUtils from "@/helpers/StringUtils"
+import { UsbDevice } from "@/helpers/USBUtils"
 
 test("Test command write", () => {
     const utils = new StringUtils()
@@ -21,5 +22,6 @@ test("Test command write", () => {
         }
     })
 
-    printCommand.write(MockUSBDevice)
+    const device = new UsbDevice(MockUSBDevice)
+    printCommand.write(device)
 })
