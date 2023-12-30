@@ -19,7 +19,11 @@ jobs:
               uses: actions/setup-node@v3
               with:
                 node-version: 18
-      
+            
+            - uses: pnpm/action-setup@v2
+              with:
+                version: 8
+
             - name: Create Release Pull Request or Publish to npm
               id: changesets
               uses: changesets/action@v1
