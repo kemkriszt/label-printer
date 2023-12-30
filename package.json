@@ -1,6 +1,6 @@
 {
   "name": "label-printer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "js package providing an abstraction over different thermal printer languages",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -11,6 +11,7 @@
   "scripts": {
     "build": "tsup",
     "examples": "npx ts-node -r tsconfig-paths/register src/examples",
+    "release": "pnpm build && pnpm changeset publish",
     "test": "jest",
     "test-watch": "jest --watch"
   },

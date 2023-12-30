@@ -7,6 +7,7 @@ import nodeExample from "./node"
 import browserExample from "./browser";
 
 nodeExample().then(() => process.exit(0))
+
 // const nodeExampleName = "Node"
 // const browserExampleName = "Browser"
 
