@@ -1,5 +1,5 @@
 {
-  "name": "label-print",
+  "name": "label-printer",
   "version": "0.2.0",
   "description": "js package providing an abstraction over different thermal printer languages",
   "main": "./dist/index.js",
