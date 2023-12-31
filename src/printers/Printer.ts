@@ -32,7 +32,7 @@ export default abstract class Printer {
      * Writes a command to the printers usb
      * @param command Command to send to the usb
      */
-    protected async writeCommand(command: Command): Promise<void> {
+    async writeCommand(command: Command): Promise<void> {
         if(!this.usbDevice.opened) await this.usbDevice.openAndConfigure()
         await command.write(this.usbDevice)
     }

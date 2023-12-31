@@ -1,5 +1,9 @@
-name: main
-on: ["push"]
+name: Test
+on: 
+  push:
+    branches:
+      - "*"
+      - '!main'
 jobs:
     test:
         runs-on: ubuntu-latest

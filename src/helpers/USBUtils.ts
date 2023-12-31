@@ -1,4 +1,4 @@
-import { InEndpoint, WebUSB } from "usb";
+import { WebUSB } from "usb";
 import StringUtils from "./StringUtils";
 
 const unsupportedUsbError = "usb-unsupported"
@@ -22,11 +22,28 @@ const getUSB = (): USB => {
 export const usbAgent = getUSB()
 
 /**
+ * Returns the list of available devices
+ * In node this returns all the connected devices but in the browser it will only return devices 
+ * that the user already gave permission to
  * @returns A list of available devices
  */
 export const getDevices = async (): Promise<UsbDevice[]> => {
     const devices = await usbAgent.getDevices()
     return devices.map(device => new UsbDevice(device) )
+}
+
+/**
+ * In node, it returns the first available device, in the browser (supported browsers only) it shows 
+ * a UI for the user to choose a device
+ * @returns The first available device
+ */
+export const requestDevice = async (): Promise<UsbDevice|undefined> => {
+    const device = await usbAgent.requestDevice()
+    if(device) {
+        return new UsbDevice(device)
+    } else {
+        return undefined
+    }
 }
 
 /**
