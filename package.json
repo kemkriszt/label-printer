@@ -30,10 +30,10 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "@changesets/cli": "^2.27.1"
   },
   "dependencies": {
-    "@changesets/cli": "^2.27.1",
     "@types/w3c-web-usb": "^1.0.10",
     "image-pixels": "^2.2.2",
     "usb": "^2.11.0"

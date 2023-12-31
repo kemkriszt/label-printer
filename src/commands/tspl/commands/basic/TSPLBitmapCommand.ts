@@ -1,4 +1,4 @@
-import { BWBitmap } from "@/helpers/ImageUtils";
+import ImageUtils, { BWBitmap } from "@/helpers/ImageUtils";
 import { GraphicMode } from "../../types";
 import TSPLVisualCommand from "../TSPLVisualCommand";
 import { UsbDevice } from "@/helpers/USBUtils";
@@ -15,9 +15,8 @@ export default class TSPLBitmapCommand extends TSPLVisualCommand {
      */
     private readonly bitmap: BWBitmap
     private readonly mode: GraphicMode
-    
+
     /**
-     * 
      * @param bitmap Bitmap to present. 
      * @param x X coordinates in dots
      * @param y Y Coordinates in dots
@@ -53,5 +52,20 @@ export default class TSPLBitmapCommand extends TSPLVisualCommand {
         await this.writeString(this.commandWithoutBytes, device)
         await this.writeBytes(this.bitmap.bytes, device)
         await this.terminateCommand(device)
+    }
+
+    /**
+     * Create a new bitmap command for the given image url
+     * @param image Image to create command for 
+     * @param x X coordinate of the image
+     * @param y Y coordinate of the image
+     * @param imageWidth Desired width of the image
+     * @param imageHeight Desired height of the image
+     * @param mode Graphics mode
+     * @returns 
+     */
+    static async forImageUrl(image: string, x: number, y: number, imageWidth?: number, imageHeight?: number, mode?: GraphicMode) {
+        const bitmap = await ImageUtils.getBWBitmap(image, imageWidth, imageHeight)
+        return new TSPLBitmapCommand(bitmap, x, y, mode)
     }
 }
