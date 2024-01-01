@@ -1,4 +1,3 @@
-import { WebUSB } from "usb";
 import StringUtils from "./StringUtils";
 
 const unsupportedUsbError = "usb-unsupported"
@@ -12,14 +11,15 @@ let usbAgent: USB
 const getUSB = async (): Promise<USB> => {
     if(usbAgent) return usbAgent
 
-    if(typeof navigator !== "undefined") {
+    if(typeof window !== "undefined") {
         if(navigator.usb) {
             usbAgent = navigator.usb
         } else {
             throw unsupportedUsbError
         }
     } else {
-        const { WebUSB } = await import("usb")
+        // TODO: Check how to avoid eval
+        const { WebUSB } = eval("require")("usb")
         usbAgent = new WebUSB({allowAllDevices: true})
     }
 
@@ -45,7 +45,7 @@ export const getDevices = async (): Promise<UsbDevice[]> => {
  */
 export const requestDevice = async (): Promise<UsbDevice|undefined> => {
     const agent = await getUSB()
-    const device = await agent.requestDevice()
+    const device = await agent.requestDevice({filters: []})
     if(device) {
         return new UsbDevice(device)
     } else {
