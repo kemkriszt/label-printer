@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.2.5
+
+### Patch Changes
+
+- 1665146: Make package work in browser
+
 ## 0.2.4
 
 ### Patch Changes
