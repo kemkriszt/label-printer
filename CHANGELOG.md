@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.2.6
+
+### Patch Changes
+
+- f457da2: Make package not include `usb` in the browser
+
 ## 0.2.5
 
 ### Patch Changes
