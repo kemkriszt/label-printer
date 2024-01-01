@@ -4,22 +4,27 @@ import StringUtils from "./StringUtils";
 const unsupportedUsbError = "usb-unsupported"
 const stringHelper = new StringUtils()
 
+let usbAgent: USB
+
 /**
  * @returns The appropiate USB agent based on the environment
  */
-const getUSB = (): USB => {
+const getUSB = async (): Promise<USB> => {
+    if(usbAgent) return usbAgent
+
     if(typeof navigator !== "undefined") {
         if(navigator.usb) {
-            return navigator.usb
+            usbAgent = navigator.usb
         } else {
             throw unsupportedUsbError
         }
+    } else {
+        const { WebUSB } = await import("usb")
+        usbAgent = new WebUSB({allowAllDevices: true})
     }
 
-    return new WebUSB({allowAllDevices: true})
+    return usbAgent
 }
-
-export const usbAgent = getUSB()
 
 /**
  * Returns the list of available devices
@@ -28,7 +33,8 @@ export const usbAgent = getUSB()
  * @returns A list of available devices
  */
 export const getDevices = async (): Promise<UsbDevice[]> => {
-    const devices = await usbAgent.getDevices()
+    const agent = await getUSB()
+    const devices = await agent.getDevices()
     return devices.map(device => new UsbDevice(device) )
 }
 
@@ -38,7 +44,8 @@ export const getDevices = async (): Promise<UsbDevice[]> => {
  * @returns The first available device
  */
 export const requestDevice = async (): Promise<UsbDevice|undefined> => {
-    const device = await usbAgent.requestDevice()
+    const agent = await getUSB()
+    const device = await agent.requestDevice()
     if(device) {
         return new UsbDevice(device)
     } else {
