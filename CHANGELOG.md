@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.2.4
+
+### Patch Changes
+
+- af05c23: Improve bitmap
+
 ## 0.2.3
 
 ### Patch Changes
