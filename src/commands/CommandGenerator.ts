@@ -9,6 +9,8 @@ import { LabelDirection } from "./tspl";
 export default interface CommandGenerator<T extends Command> {
     commandGroup: (commands: T[]) => CommandGroup<T>
     print: (sets: number, copiesPerSet: number) => T
+    text: (content: string, x: number, y: number) => T
+
     /**
      * This should generate the needed commands to set up a label before printing
      */

@@ -1,7 +1,7 @@
 import { UnitSystem } from "..";
 import CommandGenerator from "../CommandGenerator";
 import TSPLCommand from "./TSPLCommand";
-import { TSPLCLSCommand, TSPLCommandGroup, TSPLDirectionCommand, TSPLGapCommand, TSPLPrintCommand, TSPLSizeCommand } from "./commands";
+import { TSPLCLSCommand, TSPLCommandGroup, TSPLDirectionCommand, TSPLGapCommand, TSPLPrintCommand, TSPLSizeCommand, TSPLTextCommand } from "./commands";
 import { LabelDirection } from "./types";
 
 /**
@@ -14,6 +14,10 @@ class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
 
     print(sets: number, copiesPerSet: number): TSPLCommand {
         return new TSPLPrintCommand(sets, copiesPerSet)
+    }
+
+    text(content: string, x: number, y: number): TSPLCommand {
+        return new TSPLTextCommand(content, x, y, "1")
     }
 
     setUp(width: number, height: number, gap: number, offset: number, direction: LabelDirection, mirror: boolean = false, unitSystem: UnitSystem): TSPLCommand {

@@ -1,5 +1,7 @@
 import { Command, PrinterLanguage } from "@/commands";
+import { LabelDirection } from "@/commands/tspl";
 import { UsbDevice } from "@/helpers/USBUtils";
+import { Label } from "@/labels"
 
 /**
  * Base class that encapsulates functionality of all printers
@@ -26,6 +28,21 @@ export default abstract class Printer {
      */
     async close() {
         await this.usbDevice.close()
+    }
+
+    /**
+     * Prints a label
+     * @param label 
+     */
+    async print(label: Label, 
+                sets: number,
+                gap: number, 
+                copiesPerSet: number = 1,
+                direction: LabelDirection = "normal",
+                mirror: boolean = false, 
+                gapOffset: number = 0) {
+        const commands = await label.fullPrintCommand(this.language, gap, direction, sets, copiesPerSet, mirror, gapOffset)
+        await this.writeCommand(commands)
     }
 
     /**
