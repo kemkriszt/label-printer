@@ -1,5 +1,6 @@
+import { valueWithUnit } from "@/helpers/UnitUtils";
 import TSPLCommand from "../../TSPLCommand";
-import { UnitSystem } from "../../types";
+import { UnitSystem } from "@/commands";
 
 /**
  * Defines the size of the label to rpint
@@ -24,14 +25,6 @@ export default class TSPLSizeCommand extends TSPLCommand {
     } 
 
     get commandString(): string {
-        return `SIZE ${this.valueWithUnit(this.width)}, ${this.valueWithUnit(this.height)}`
-    }
-
-    private valueWithUnit(value: number) {
-        switch(this.unitSystem) {
-            case "dot": return `${value} dot`
-            case "imperial": return value
-            case "metric": return `${value} mm`
-        }
+        return `SIZE ${valueWithUnit(this.width, this.unitSystem)}, ${valueWithUnit(this.height, this.unitSystem)}`
     }
 }

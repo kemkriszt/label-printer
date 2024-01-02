@@ -1,4 +1,6 @@
-# Label Print
+# Label Printer
+
+> :warning: `label-printer` is still under heavy development and is subject to frequent API changes
 
 This package provides a js based implementation for variouse languages used for label printers
 

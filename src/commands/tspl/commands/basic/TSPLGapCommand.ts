@@ -1,5 +1,6 @@
+import { valueWithUnit } from "@/helpers/UnitUtils";
 import TSPLCommand from "../../TSPLCommand";
-import { UnitSystem } from "../../types";
+import { UnitSystem } from "@/commands";
 
 /**
  * Defines the gap between two labels
@@ -25,14 +26,6 @@ export default class TSPLGapCommand extends TSPLCommand {
     } 
 
     get commandString(): string {
-        return `GAP ${this.valueWithUnit(this.gap)}, ${this.valueWithUnit(this.offset)}`
-    }
-
-    private valueWithUnit(value: number) {
-        switch(this.unitSystem) {
-            case "dot": return `${value} dot`
-            case "imperial": return value
-            case "metric": return `${value} mm`
-        }
+        return `GAP ${valueWithUnit(this.gap, this.unitSystem)}, ${valueWithUnit(this.offset, this.unitSystem)}`
     }
 }
