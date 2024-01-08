@@ -111,7 +111,7 @@ export class UsbDevice {
      * Write data to an USB device
      * @param data Data to write
      */
-    async writeData(data: Uint8Array): Promise<void> {
+    async writeData(data: Uint8Array|ArrayBuffer): Promise<void> {
         const endpointNumber = this.outEndpoint
         await this.device.transferOut(endpointNumber!, data)
     }

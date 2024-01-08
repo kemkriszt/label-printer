@@ -10,6 +10,10 @@ export default abstract class Command {
      */
     abstract get commandString(): string
 
+    print(fn: (command: string) => void) {
+        fn(this.commandString)
+    }
+
     /**
      * Write the command data to a USB device
      * @param device Device to write to
@@ -40,7 +44,7 @@ export default abstract class Command {
      * @param data Byte array to send
      * @param device Device to write to
      */
-    protected async writeBytes(data: Uint8Array, device: UsbDevice): Promise<void> {
+    protected async writeBytes(data: Uint8Array|ArrayBuffer, device: UsbDevice): Promise<void> {
         await device.writeData(data)
     }
 

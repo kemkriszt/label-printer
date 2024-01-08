@@ -14,6 +14,12 @@ export default abstract class CommandGroup<T extends Command> extends Command {
         this.commands = commands
     }
 
+    print(fn: (command: string) => void) {
+        for (let commandIndex in this.commands) {
+            this.commands[commandIndex].print(fn)
+        }
+    }
+
     async write(device: UsbDevice): Promise<void> {
         for (let commandIndex in this.commands) {
             await this.commands[commandIndex].write(device)

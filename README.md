@@ -38,3 +38,8 @@ This layer contains code to interact with printers
 ## Documentation of supported languages
 
 - [TSPL](documentations/TSPL.pdf)
+
+### Usefull units:
+
+- 1 pt = 1/72 inch
+- 1 dot = 1 / dpi

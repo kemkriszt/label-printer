@@ -46,6 +46,15 @@ export default abstract class Printer {
     }
 
     /**
+     * Display label on the printer's screen
+     * @param label 
+     */
+    async display(label: Label, direction: LabelDirection = "normal", mirror: boolean = false) {
+        const command = await label.fullDisplayCommand(this.language, direction, mirror)
+        await this.writeCommand(command)
+    }
+
+    /**
      * Writes a command to the printers usb
      * @param command Command to send to the usb
      */

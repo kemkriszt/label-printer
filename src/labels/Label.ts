@@ -1,8 +1,10 @@
 import { Command, PrinterLanguage } from "@/commands";
-import Printable from "./Printable";
+import Printable, { PrintConfig } from "./Printable";
 import { UnitSystem } from "@/commands";
-import { LabelDirection } from "@/commands/tspl";
+import { LabelDirection, TSPLCommand, TSPLRawCommand } from "@/commands/tspl";
 import LabelField from "./fields/LabelField";
+import { Font } from "./types";
+import CommandGenerator from "@/commands/CommandGenerator";
 
 /**
  * Holds the content of a label and handles printing
@@ -21,27 +23,55 @@ export default class Label extends Printable {
      * Units for width, height, gap and offset
      */
     private readonly unitSystem: UnitSystem
+    private fonts: Font[] = []
+    private dpi: number
 
+    /**
+    * List of fields on the label
+    */
+    private fields: LabelField[] = []
 
-    constructor(width: number, height: number, dimensionUnit: UnitSystem = "metric") {
+    /**
+     * Configuration used when generating commands
+     */
+    private get printConfig(): PrintConfig {
+        return { dpi: this.dpi }
+    }
+
+    constructor(width: number, height: number, dimensionUnit: UnitSystem = "metric", dpi: number = 203) {
         super()
         this.width = width
         this.height = height
         this.unitSystem = dimensionUnit
+        this.dpi = dpi
     }
 
-    /**
-     * List of fields on the label
-     */
-    private fields: LabelField[] = []
-
-    async commandForLanguage(language: PrinterLanguage): Promise<Command> {
-        const commandList = await Promise.all(this.fields.map(field => field.commandForLanguage(language)))
+    async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {
+        const commandList = await Promise.all(this.fields.map(field => field.commandForLanguage(language, config)))
         return this.commandGeneratorFor(language).commandGroup(commandList)
     }
 
-    add(field: LabelField) {
-        this.fields.push(field)
+    /**
+     * Place fields to a label
+     * @param fields 
+     */
+    add(...fields: LabelField[]) {
+        this.fields.push(...fields)
+    }
+
+    /**
+     * Register a font to be used. Use the name provided in components to use the font. 
+     * For example: textField.setFont('myFont.ttf', 12)
+     * @param file Font file. Can be a blob or a url
+     * @param name Name to be used to reference the font
+     */
+    async registerFont(file: ArrayBufferLike|string, name: string) {
+        if(typeof file == "string") {
+            const resp = await fetch(file)
+            file = await resp.arrayBuffer()
+        }
+
+        this.fonts.push({name, data: file})
     }
 
     /**
@@ -67,12 +97,42 @@ export default class Label extends Printable {
                           ): Promise<Command> {
 
         const generator = this.commandGeneratorFor(language)
-        const commands = [
-            ...generator.setUp(this.width, this.height, gap, gapOffset, direction, mirror, this.unitSystem),
-            this.commandForLanguage(language),
-            generator.print(sets, copiesPerSet)
-        ]
+        const commands = await this.fullCommand(language, gap, direction, mirror, gapOffset, generator)
+        commands.push(generator.print(sets, copiesPerSet))
 
         return generator.commandGroup(commands)
+    }
+
+    /**
+     * Generate commands needed to display the label on the printer screen
+     * @param language Printing language to use
+     * @param direction Direction relative to printing direction. See documentation for more details
+     * @param mirror Mirror the label along the vertical axis
+     */
+    async fullDisplayCommand(language: PrinterLanguage, direction: LabelDirection, mirror: boolean = false) {
+        const generator = this.commandGeneratorFor(language)
+        const commands = await this.fullCommand(language, 0, direction, mirror, 0, generator)
+        commands.push(generator.display())
+        
+        const group = generator.commandGroup(commands)
+        group.print(console.log)
+        return group
+    }
+
+    /**
+     * Helper function that generates common commands for print and display
+     */
+    private async fullCommand(language: PrinterLanguage, 
+                              gap: number,  
+                              direction: LabelDirection, 
+                              mirror: boolean = false, 
+                              gapOffset: number = 0, 
+                              generator: CommandGenerator<any>) {
+        const commands = [
+            ...(this.fonts.map((font) => generator.upload(font.name, font.data) )),
+            generator.setUp(this.width, this.height, gap, gapOffset, direction, mirror, this.unitSystem),
+            (await this.commandForLanguage(language, this.printConfig)),
+        ]
+        return commands
     }
 }

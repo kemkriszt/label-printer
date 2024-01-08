@@ -1,7 +1,7 @@
-import { UnitSystem } from "..";
+import { Point, UnitSystem } from "..";
 import CommandGenerator from "../CommandGenerator";
 import TSPLCommand from "./TSPLCommand";
-import { TSPLCLSCommand, TSPLCommandGroup, TSPLDirectionCommand, TSPLGapCommand, TSPLPrintCommand, TSPLSizeCommand, TSPLTextCommand } from "./commands";
+import { TSPLCLSCommand, TSPLCommandGroup, TSPLDiagonal, TSPLDirectionCommand, TSPLDisplay, TSPLDownload, TSPLGapCommand, TSPLPrintCommand, TSPLRawCommand, TSPLSizeCommand, TSPLTextCommand } from "./commands";
 import { LabelDirection } from "./types";
 
 /**
@@ -16,8 +16,13 @@ class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
         return new TSPLPrintCommand(sets, copiesPerSet)
     }
 
-    text(content: string, x: number, y: number): TSPLCommand {
-        return new TSPLTextCommand(content, x, y, "1")
+    text(content: string, x: number, y: number, font: string|"default", size: number): TSPLCommand {
+        const fontName = font == "default" ? "0" : font
+        return new TSPLTextCommand(content, x, y, fontName, 0, size, size, "left")
+    }
+
+    upload(name: string, data: ArrayBuffer | Uint8Array): TSPLCommand {
+        return new TSPLDownload(name, data)
     }
 
     setUp(width: number, height: number, gap: number, offset: number, direction: LabelDirection, mirror: boolean = false, unitSystem: UnitSystem): TSPLCommand {
@@ -29,6 +34,17 @@ class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
         ]
 
         return new TSPLCommandGroup(commands)
+    }
+
+    display() {
+        return new TSPLCommandGroup([
+            new TSPLDisplay("CLS"),
+            new TSPLDisplay("IMAGE")
+        ])
+    }
+
+    line(start: Point, end: Point, thickness: number): TSPLCommand {
+        return new TSPLDiagonal(start, end, thickness)
     }
 }
 
