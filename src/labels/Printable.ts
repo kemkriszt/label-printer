@@ -3,7 +3,8 @@ import CommandGenerator from "@/commands/CommandGenerator";
 import { Printer } from "@/printers";
 
 export type PrintConfig = {
-    dpi: number
+    dpi: number,
+    textWidth: (text: string, font: string, fontSize: number) => number
 }
 
 /**

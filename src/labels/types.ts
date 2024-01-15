@@ -1,6 +1,7 @@
+import { Font as FKFont } from "fontkit"
+
 export type Font = {
     name: string,
     data: ArrayBufferLike
-    // width: number,
-    // height: number
+    font: FKFont
 }

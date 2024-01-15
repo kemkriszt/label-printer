@@ -17,3 +17,17 @@ export function dotToPoint(dots: number, dpi: number): number {
     const inch = dots / dpi
     return Math.round(inch * pointsPerInch)
 }
+
+/**
+ * Converts the points value to dots
+ * 1 inch = 72 points (standard in typography)
+ * Formula: dots = points * dpi / pointsPerInch
+ * @param points 
+ * @param dpi 
+ * @returns 
+ */
+export function pointsToDots(points: number, dpi: number): number {
+    const pointsPerInch = 72;
+    const dots = points * dpi / pointsPerInch;
+    return dots;
+}

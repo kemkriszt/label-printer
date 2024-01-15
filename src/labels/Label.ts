@@ -1,10 +1,12 @@
 import { Command, PrinterLanguage } from "@/commands";
 import Printable, { PrintConfig } from "./Printable";
 import { UnitSystem } from "@/commands";
-import { LabelDirection, TSPLCommand, TSPLRawCommand } from "@/commands/tspl";
+import { LabelDirection } from "@/commands/tspl";
 import LabelField from "./fields/LabelField";
 import { Font } from "./types";
 import CommandGenerator from "@/commands/CommandGenerator";
+import fontkit from "fontkit"
+import { dotToPoint, pointsToDots } from "@/helpers/UnitUtils";
 
 /**
  * Holds the content of a label and handles printing
@@ -23,7 +25,7 @@ export default class Label extends Printable {
      * Units for width, height, gap and offset
      */
     private readonly unitSystem: UnitSystem
-    private fonts: Font[] = []
+    private fonts: Record<string, Font> = {}
     private dpi: number
 
     /**
@@ -34,8 +36,19 @@ export default class Label extends Printable {
     /**
      * Configuration used when generating commands
      */
-    private get printConfig(): PrintConfig {
-        return { dpi: this.dpi }
+    get printConfig(): PrintConfig {
+        return { 
+            dpi: this.dpi,
+            textWidth: (text, font, fontSize) => {
+                const size = dotToPoint(fontSize, this.dpi)
+                const fontObject = this.fonts[font].font
+                
+                const run = fontObject.layout(text)
+
+                const scaledWidth = size * run.advanceWidth / fontObject.unitsPerEm
+                return pointsToDots(scaledWidth, this.dpi)
+            }
+        } 
     }
 
     constructor(width: number, height: number, dimensionUnit: UnitSystem = "metric", dpi: number = 203) {
@@ -71,7 +84,8 @@ export default class Label extends Printable {
             file = await resp.arrayBuffer()
         }
 
-        this.fonts.push({name, data: file})
+        const fontBuffer = Buffer.from(file)
+        this.fonts[name] = {name, data: file, font: fontkit.create(fontBuffer)}
     }
 
     /**
@@ -129,7 +143,7 @@ export default class Label extends Printable {
                               gapOffset: number = 0, 
                               generator: CommandGenerator<any>) {
         const commands = [
-            ...(this.fonts.map((font) => generator.upload(font.name, font.data) )),
+            ...(Object.values(this.fonts).map((font) => generator.upload(font.name+".TTF", font.data) )),
             generator.setUp(this.width, this.height, gap, gapOffset, direction, mirror, this.unitSystem),
             (await this.commandForLanguage(language, this.printConfig)),
         ]

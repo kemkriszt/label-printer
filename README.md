@@ -39,7 +39,11 @@ This layer contains code to interact with printers
 
 - [TSPL](documentations/TSPL.pdf)
 
-### Usefull units:
+# Usefull units:
 
 - 1 pt = 1/72 inch
 - 1 dot = 1 / dpi
+
+# Notes
+
+- If a font is not working, make sure the extension is TTF

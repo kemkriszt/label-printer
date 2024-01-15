@@ -1,6 +1,6 @@
 import TSPLCommand from "../../TSPLCommand";
 
-export type DisplayType = "CLS"|"IMAGE"
+export type DisplayType = "CLS"|"IMAGE"|"OFF"
 
 /**
  * Displays the image buffer on the screen
