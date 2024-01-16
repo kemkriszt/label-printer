@@ -35,27 +35,26 @@ export default async () => {
     if(printers.length > 0) {
         const printer = printers[0]
 
-        const fontName = "super"
-        const fontName2 = "mathova"
+        const fontName = "roboto"
         const testText = "Hello 4 <b>from</b> <u>the <b>other</b> side</u>"
         const fontSize = 25
         const textX = 10
         const textY = 10
 
-        const font = fs.readFileSync(__dirname+"/"+fontName+".TTF").buffer
-        const font2 = fs.readFileSync(__dirname+"/"+fontName2+".TTF").buffer
+        const fontRegular = fs.readFileSync(__dirname+"/Roboto-Regular.ttf").buffer
+        const fontBold = fs.readFileSync(__dirname+"/Roboto-Bold.ttf").buffer
 
         const label = new Label(50, 25)
 
-        label.registerFont(font, fontName)
-        label.registerFont(font2, fontName2)
+        label.registerFont({name: fontName, data: fontRegular, weight: 400, style: "normal"})
+        // label.registerFont({name: fontName, data: fontBold, weight: 700, style: "normal"})
 
-        const text = new Text(testText, textX, textY, true)
+        const text = new Text(testText, textX, textY, false)
         // const line = new Line({x: textX, y: textY + fontSize}, {x: textX , y: textY + fontSize})
         const line2 = new Line({x: textX - 5, y: textY + fontSize}, {x: textX - 5, y: textY})
 
-        text.setFont(fontName2, fontSize)
-        text.setMultiLine(150)
+        text.setFont({name: fontName, size: fontSize})
+        // text.setMultiLine(150)
 
         
         label.add(text) // line2

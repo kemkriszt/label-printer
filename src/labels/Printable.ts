@@ -1,10 +1,12 @@
 import { Command, PrinterLanguage, tspl } from "@/commands";
 import CommandGenerator from "@/commands/CommandGenerator";
 import { Printer } from "@/printers";
+import { FontOption } from "./types";
 
 export type PrintConfig = {
     dpi: number,
-    textWidth: (text: string, font: string, fontSize: number) => number
+    textWidth: (text: string, font: FontOption) => number,
+    getFontName: (font: FontOption) => string
 }
 
 /**

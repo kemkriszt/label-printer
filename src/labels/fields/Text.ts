@@ -5,6 +5,7 @@ import { dotToPoint } from "@/helpers/UnitUtils"
 import CommandGenerator from "@/commands/CommandGenerator"
 import { isWhitespace } from "@/helpers/StringUtils"
 import { NodeType, parse, HTMLElement, Node } from "node-html-parser"
+import { FontOption } from "../types"
 
 export type TextFieldType = "singleline"|"multiline"
 type Context = {
@@ -15,6 +16,7 @@ type Context = {
 
 type TextDecoration = "underline"|"strike"
 
+const BOLD_WEIGTH = 400
 const BOLD_TAG = "b"
 const UNDERLINE_TAG = "u"
 const STRIKE_TAG = "s"
@@ -36,8 +38,7 @@ export default class Text extends LabelField {
      * If true, basic html elements will be interpretted, otherwise the raw string is printed out
      */
     private readonly formatted: boolean
-    private fontSize: number = 10
-    private font: string = "default"
+    private font: FontOption = {name: "default", size: 10}
     private type: TextFieldType = "singleline"
     private context: Context|undefined = undefined
     private readonly lineSpacing = 1
@@ -86,13 +87,9 @@ export default class Text extends LabelField {
      * Set a font to use as a base. If no formatting is set on the text with a html tag, this will be used 
      * Note: The font name either has to be a built in font on your printer or a font
      * that is registered on the label using 'registerFont'.
-     * 
-     * @param name Name of the font. Use 'default' to use the default font on any printer you connect
-     * @param size Font size in dots
      */
-    setFont(name: "default"|string, size: number = 10) {
-        this.font = name
-        this.fontSize = size
+    setFont(font: FontOption) {
+        this.font = font
     }
 
     async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {
@@ -102,7 +99,6 @@ export default class Text extends LabelField {
             generator: this.commandGeneratorFor(language)
         }
 
-        
         let command: Command
         if(this.formatted) {
             command = this.generateFormattedText()
@@ -113,22 +109,34 @@ export default class Text extends LabelField {
   
         return command
     }
-
+    
+    /**
+     * Generate commands for formatted text
+     * @returns 
+     */
     private generateFormattedText(): Command {
         if(!this.context) throw "context-not-set"
         
-        // Starter values
         const rootNode = parse(this.content)
-        const { command } = this.generateFormattedRecursive(this.x, this.y, rootNode, this.font, this.fontSize, [])
+        const { command } = this.generateFormattedRecursive(this.x, this.y, rootNode, this.font, [])
+        return command
+    }
+
+    /**
+     * Generate commands for plain text
+     * @returns 
+     */
+    private generatePlainText(): Command {
+        const {command} = this.generatePlainTextCore(this.content, this.x, this.y, this.font)
         return command
     }
 
     /**
      * Iterats the nodes in a html text and generates text commands for it
      */
-    private generateFormattedRecursive(initialX: number, initialY: number, rootNode: Node, font: string, fontSize: number, features: TextDecoration[]): {x: number, y: number, command: Command} {
+    private generateFormattedRecursive(initialX: number, initialY: number, rootNode: Node, font: FontOption, features: TextDecoration[]): {x: number, y: number, command: Command} {
         if(rootNode.nodeType == NodeType.TEXT_NODE) {
-            const result = this.generatePlainTextCore(rootNode.innerText, initialX, initialY, font, fontSize, features)
+            const result = this.generatePlainTextCore(rootNode.innerText, initialX, initialY, font, features)
             return result
         } else {
             const elementNode = rootNode as HTMLElement
@@ -138,18 +146,19 @@ export default class Text extends LabelField {
             let currentX = initialX
             let currentY = initialY
 
-            const baseFont = tag == BOLD_TAG ? this.getBoldFont(font) : font
-            const baseFontSize = fontSize
+            let baseFont = {...font}
             let baseFeatures = [...features]
             
             if(tag == UNDERLINE_TAG) {
                 baseFeatures.push("underline")
             } else if(tag == STRIKE_TAG) {
                 baseFeatures.push("strike")
+            } else if(tag == BOLD_TAG) {
+                baseFont.weight = BOLD_WEIGTH
             }
 
             elementNode.childNodes.forEach(node => {
-                const {x,y,command} = this.generateFormattedRecursive(currentX, currentY, node, baseFont, baseFontSize, baseFeatures, )
+                const {x,y,command} = this.generateFormattedRecursive(currentX, currentY, node, baseFont, baseFeatures )
                 currentX = x
                 currentY = y
                 commands.push(command)
@@ -168,21 +177,11 @@ export default class Text extends LabelField {
      * @param config 
      * @returns 
      */
-    private generatePlainText(): Command {
-        const {command} = this.generatePlainTextCore(this.content, this.x, this.y, this.font, this.fontSize)
-        return command
-    }
-
-    /**
-     * Generate commands for plain text
-     * @param config 
-     * @returns 
-     */
-    private generatePlainTextCore(content: string, initialX: number, initialY: number, font: string, fontSize: number, features: TextDecoration[] = []): {x: number, y: number, command: Command} {
+    private generatePlainTextCore(content: string, initialX: number, initialY: number, font: FontOption, features: TextDecoration[] = []): {x: number, y: number, command: Command} {
         if(!this.context) throw "context-not-set"
 
-        const textWidhtFunction = (this.context.config?.textWidth ?? this.defaultTextWidth)
-        const fullWidth = textWidhtFunction(content, font, fontSize)
+        const textWidhtFunction = this.textWithFunction
+        const fullWidth = textWidhtFunction(content, font)
 
         if(this.width) {
             const initialPadding = initialX - this.x
@@ -195,7 +194,7 @@ export default class Text extends LabelField {
                 return {
                     x: initialX + fullWidth,
                     y: initialY,
-                    command: this.textCommand(content, initialX, initialY, font, fontSize)
+                    command: this.textCommand(content, initialX, initialY, font)
                 }
             } else {
                 const commands: Command[] = []
@@ -214,7 +213,7 @@ export default class Text extends LabelField {
                     if(remainingWidth < rowWidth) {
                         finalX = this.x + remainingWidth
                         finalY = y
-                        commands.push(this.textCommand(remainingContent,  x, y, font, fontSize))
+                        commands.push(this.textCommand(remainingContent,  x, y, font))
                         remainingContent = ""
                     } else {
                         // On how many rows this text would fit
@@ -230,7 +229,7 @@ export default class Text extends LabelField {
                         // in this case, we have to go to a new line
                         if(rowEndIndex == 0) {
                             x = this.x
-                            y += fontSize + this.lineSpacing
+                            y += font.size + this.lineSpacing
                             continue
                         }
 
@@ -270,21 +269,21 @@ export default class Text extends LabelField {
                         }
 
                         const thisRow = remainingContent.substring(0, rowEndIndex + 1)
-                        commands.push(this.textCommand(thisRow, x, y, font, fontSize))
+                        commands.push(this.textCommand(thisRow, x, y, font))
 
                         // Make sure to move the cursor back to the left side of the text box
                         // as we may have started further into the row
                         x = this.x
-                        y += fontSize + this.lineSpacing
+                        y += font.size + this.lineSpacing
                         currentHeight = y - this.y
                         remainingContent = remainingContent.substring(nextRowStartIndex)
-                        remainingWidth = textWidhtFunction(remainingContent, font, fontSize)
+                        remainingWidth = textWidhtFunction(remainingContent, font)
                     }
                 } while(
                     // We don't have a height constraint or we are still within bounds 
                     // and there is still content 
                     // and we are supporting multiline
-                    (this.height == undefined || (currentHeight + fontSize) <= this.height) &&
+                    (this.height == undefined || (currentHeight + font.size) <= this.height) &&
                     (remainingContent != "") &&
                     this.type == "multiline"
                 )
@@ -296,38 +295,46 @@ export default class Text extends LabelField {
                 }
             }
         } else {
-            //
             return {
                 x: initialX + fullWidth,
                 y: initialY,
-                command: this.textCommand(content, initialX, initialY, font, fontSize)
+                command: this.textCommand(content, initialX, initialY, font)
             }
         }
     }
 
-    private textCommand(text: string, x: number, y: number, font: string, fontSize: number) {
-        const finalFontSize = dotToPoint(fontSize, this.context!.config?.dpi ?? 203)
+    private textCommand(text: string, x: number, y: number, font: FontOption) {
+        if(!this.context) throw "no-context"
+        const finalFontSize = dotToPoint(font.size, this.context!.config?.dpi ?? 203)
         const finalFont = this.getFontName(font)
-        return this.context!.generator.text(text, x, y, finalFont, finalFontSize)
+        const finalX = Math.round(x)
+        const finalY = Math.round(y)
+
+        return this.context!.generator.text(text, finalX, finalY, finalFont, finalFontSize)
+    }
+
+    private getFontName(font: FontOption) {
+        if(!this.context) throw "no-context"
+        if(font.name == "default") {
+            return "default"
+        } else {
+            return this.context!.config?.getFontName(font)!
+        }
+    }
+
+    private get textWithFunction() {
+        if(this.font.name == "default") {
+            return this.defaultTextWidth
+        } else {
+            return this.context?.config?.textWidth ?? this.defaultTextWidth
+        }
     }
 
     /**
      * This function is used to calculate the font size if no
      * print config is provided. This will asume that the font has square characters
      */
-    private defaultTextWidth(text: string, _f: string, fontSize: number) {
-        return text.length * fontSize
-    }
-
-    private getBoldFont(font: string) {
-        if(font.includes('-bold')) {
-            return font
-        } else {
-            return `${font}-bold`
-        }
-    }
-
-    private getFontName(font: string) {
-        return `${font}.TTF`
+    private defaultTextWidth(text: string, font: FontOption) {
+        return text.length * font.size
     }
 }

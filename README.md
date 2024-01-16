@@ -47,3 +47,5 @@ This layer contains code to interact with printers
 # Notes
 
 - If a font is not working, make sure the extension is TTF
+- If you want to use bold fonts, make sure you have one for weight 700
+- Regular font weight is 400

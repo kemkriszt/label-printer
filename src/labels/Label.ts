@@ -3,10 +3,14 @@ import Printable, { PrintConfig } from "./Printable";
 import { UnitSystem } from "@/commands";
 import { LabelDirection } from "@/commands/tspl";
 import LabelField from "./fields/LabelField";
-import { Font } from "./types";
+import { Font, FontFamily, FontOption, FontStyle, IndexedFontFamily, NamelessFont } from "./types";
 import CommandGenerator from "@/commands/CommandGenerator";
 import fontkit from "fontkit"
 import { dotToPoint, pointsToDots } from "@/helpers/UnitUtils";
+
+const DEFAULT_FONT_WEIGHT = 400
+const DEFAULT_FONT_STYLE = "normal"
+const FONT_PREFIX = "f"
 
 /**
  * Holds the content of a label and handles printing
@@ -25,13 +29,14 @@ export default class Label extends Printable {
      * Units for width, height, gap and offset
      */
     private readonly unitSystem: UnitSystem
-    private fonts: Record<string, Font> = {}
+    private fonts: Record<string, IndexedFontFamily> = {}
     private dpi: number
 
     /**
     * List of fields on the label
     */
     private fields: LabelField[] = []
+    private fontCounter = 0
 
     /**
      * Configuration used when generating commands
@@ -39,15 +44,16 @@ export default class Label extends Printable {
     get printConfig(): PrintConfig {
         return { 
             dpi: this.dpi,
-            textWidth: (text, font, fontSize) => {
-                const size = dotToPoint(fontSize, this.dpi)
-                const fontObject = this.fonts[font].font
+            textWidth: (text, font) => {
+                const size = dotToPoint(font.size, this.dpi)
+                const fontObject = this.getIndexedFont(font).font
                 
                 const run = fontObject.layout(text)
 
                 const scaledWidth = size * run.advanceWidth / fontObject.unitsPerEm
                 return pointsToDots(scaledWidth, this.dpi)
-            }
+            },
+            getFontName: this.getFontName.bind(this)
         } 
     }
 
@@ -78,14 +84,22 @@ export default class Label extends Printable {
      * @param file Font file. Can be a blob or a url
      * @param name Name to be used to reference the font
      */
-    async registerFont(file: ArrayBufferLike|string, name: string) {
-        if(typeof file == "string") {
-            const resp = await fetch(file)
-            file = await resp.arrayBuffer()
+    async registerFont(font: Omit<Font, "font">) {
+        const key = this.fontKey(font.weight, font.style)
+
+        if(!this.fonts[font.name]) {
+            this.fonts[font.name] = {
+                fonts: {}
+            }
         }
 
-        const fontBuffer = Buffer.from(file)
-        this.fonts[name] = {name, data: file, font: fontkit.create(fontBuffer)}
+        const fontBuffer = Buffer.from(font.data)
+        this.fonts[font.name].fonts[key] = {
+            ...font,
+            font: fontkit.create(fontBuffer),
+            alias: `${FONT_PREFIX}${this.fontCounter}.${this.fontExtension}`
+        }
+        this.fontCounter += 1
     }
 
     /**
@@ -143,10 +157,82 @@ export default class Label extends Printable {
                               gapOffset: number = 0, 
                               generator: CommandGenerator<any>) {
         const commands = [
-            ...(Object.values(this.fonts).map((font) => generator.upload(font.name+".TTF", font.data) )),
+            this.fontUploadCommands(generator),
             generator.setUp(this.width, this.height, gap, gapOffset, direction, mirror, this.unitSystem),
             (await this.commandForLanguage(language, this.printConfig)),
         ]
         return commands
+    }
+
+    private fontUploadCommands(generator: CommandGenerator<any>): Command {
+        const families = Object.keys(this.fonts)
+        const commands = families.flatMap(family => {
+            const familyFonts = this.fonts[family].fonts
+            const fontNames = Object.keys(familyFonts)
+
+            return fontNames.map(name => {
+                const font = familyFonts[name]
+                const fileName = font.alias
+
+                return generator.upload(fileName, font.data)
+            })
+        })
+
+        return generator.commandGroup(commands)
+    }
+
+    private getIndexedFont(font: FontOption) {
+        const family = this.fonts[font.name]
+
+        const style = font.style ?? DEFAULT_FONT_STYLE
+        const weigth = font.weight ?? DEFAULT_FONT_WEIGHT
+
+        const fontKeys = Object.keys(family.fonts)
+        const exactMatch = fontKeys.find(key => 
+            family.fonts[key].style == style &&
+            family.fonts[key].weight == weigth
+        )
+
+        // If there is a font that matches exactly the requested one we return that
+        // otherwise we find the one that is the closest in weight
+        // if there is no font with the same style, we return the first normal font in the family
+        if(exactMatch) {
+            return family.fonts[exactMatch]
+        } else {
+            const sameStyleKeys = fontKeys.filter(key => family.fonts[key].style == style)
+
+            if(sameStyleKeys.length > 0){
+                let weigthDiff = 99999999
+                let selectedKey = ""
+
+                sameStyleKeys.forEach(key => {
+                    const diff = Math.abs(weigth - family.fonts[key].weight)
+                    if(diff < weigthDiff) {
+                        weigthDiff = diff
+                        selectedKey = key
+                    }
+                })
+
+                return family.fonts[selectedKey]
+            } else {
+                return family.fonts[fontKeys[0]]
+            }
+        }
+    }
+
+    private getFontName(font: FontOption) {
+        // We don't access values directly passed in to make sure the font name we return exists
+        const indexedFont = this.getIndexedFont(font)
+        return indexedFont.alias
+        // return this.getFontNameForIndexed({name: font.name, weight: indexedFont.weight, style: indexedFont.style})
+    }
+
+    /// This can be extended when we want support multiple fonts
+    private get fontExtension() {
+        return "TTF"
+    }
+
+    private fontKey(weight: number, style?: FontStyle) {
+        return `${weight}${style ?? DEFAULT_FONT_STYLE}`
     }
 }
