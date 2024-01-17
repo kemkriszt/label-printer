@@ -36,28 +36,32 @@ export default async () => {
         const printer = printers[0]
 
         const fontName = "roboto"
-        const testText = "Hello 4 <b>from</b> <u>the <b>other</b> <s>side</s></u>"
+        const testText = "Hello 4 <b>from</b> <u>the <b>other</b> side</u> <i>noooooooo</i> not <i><b>really</b></i>"
         const fontSize = 25
         const textX = 10
         const textY = 10
+        const textWidth = 180
 
         const fontRegular = fs.readFileSync(__dirname+"/Roboto-Regular.ttf").buffer
         const fontBold = fs.readFileSync(__dirname+"/Roboto-Bold.ttf").buffer
+        const fontItalic = fs.readFileSync(__dirname+"/Roboto-Italic.ttf").buffer
+        const fontBoldItalic = fs.readFileSync(__dirname+"/Roboto-BoldItalic.ttf").buffer
 
         const label = new Label(50, 25)
 
         label.registerFont({name: fontName, data: fontRegular, weight: 400, style: "normal"})
         label.registerFont({name: fontName, data: fontBold, weight: 700, style: "normal"})
+        label.registerFont({name: fontName, data: fontItalic, weight: 400, style: "italic"})
+        label.registerFont({name: fontName, data: fontBoldItalic, weight: 700, style: "italic"})
 
         const text = new Text(testText, textX, textY)
-        // const line = new Line({x: textX, y: textY + fontSize}, {x: textX , y: textY + fontSize})
-        const line2 = new Line({x: textX - 5, y: textY + fontSize}, {x: textX - 5, y: textY})
+        // const line = new Line({x: textX + textWidth, y: textY}, {x: textX + textWidth , y: textY + 300})
 
         text.setFont({name: fontName, size: fontSize})
-        text.setMultiLine(150)
+        text.setMultiLine(textWidth)
 
         
-        label.add(text) // line2
+        label.add(text)
     
         await printer.display(label)
         await printer.close()

@@ -18,6 +18,7 @@ type TextDecoration = "underline"|"strike"
 
 const BOLD_WEIGTH = 700
 const BOLD_TAG = "b"
+const ITALIC_TAG = "i"
 const UNDERLINE_TAG = "u"
 const STRIKE_TAG = "s"
 
@@ -155,6 +156,8 @@ export default class Text extends LabelField {
                 baseFeatures.push("strike")
             } else if(tag == BOLD_TAG) {
                 baseFont.weight = BOLD_WEIGTH
+            } else if(tag == ITALIC_TAG) {
+                baseFont.style = "italic"
             }
 
             elementNode.childNodes.forEach(node => {
@@ -181,12 +184,24 @@ export default class Text extends LabelField {
         if(!this.context) throw "context-not-set"
 
         const textWidhtFunction = this.textWithFunction
-        const fullWidth = textWidhtFunction(content, font)
+        let fullWidth = textWidhtFunction(content, font)
 
         if(this.width) {
             const initialPadding = initialX - this.x
             // Because we may start from further in the row, the first rows width may be smaller
             let rowWidth = this.width - initialPadding
+            // In theory rowWidth should not be negative, but for some reson it happens.. as a quick work around we make sure it is not negative
+            if(rowWidth <= 0) {
+                rowWidth = this.width
+                initialX = this.x
+                initialY += font.size + this.lineSpacing
+            }
+
+            // Make sure we don't print spaces at the beginig of a row
+            if(initialX == this.x) {
+                content = content.trimStart()
+                fullWidth = textWidhtFunction(content, font)
+            }
 
             // We may not start from the begining of the textbox so we have to offset
             // by our current position
@@ -211,13 +226,15 @@ export default class Text extends LabelField {
                 do {
                     // This will be the last row of the text. 
                     if(remainingWidth < rowWidth) {
-                        finalX = this.x + remainingWidth
+                        finalX = x + remainingWidth
                         finalY = y
+
                         commands.push(this.textCommand(remainingContent,  x, y, font, features))
                         remainingContent = ""
                     } else {
                         // On how many rows this text would fit
                         let rows = remainingWidth / rowWidth
+
                         // From the second row, all rows are full width
                         rowWidth = this.width
                         // Which caracter is the last if dividing into the right number of rows
@@ -227,6 +244,7 @@ export default class Text extends LabelField {
                         // This means we have to fit a relatively short text into
                         // a lot of rows which can only happen if the row width is very small
                         // in this case, we have to go to a new line
+                        // This is used to avoid having to calculate the width of the first character of the current text, to compare with the remainig length
                         if(rowEndIndex == 0) {
                             x = this.x
                             y += font.size + this.lineSpacing
@@ -271,11 +289,17 @@ export default class Text extends LabelField {
                         const thisRow = remainingContent.substring(0, rowEndIndex + 1)
                         commands.push(this.textCommand(thisRow, x, y, font, features))
 
+                        if(nextRowStartIndex == remainingContent.length) {
+                            finalX = x + remainingWidth
+                            finalY = y
+                        }
+
                         // Make sure to move the cursor back to the left side of the text box
                         // as we may have started further into the row
                         x = this.x
                         y += font.size + this.lineSpacing
                         currentHeight = y - this.y
+
                         remainingContent = remainingContent.substring(nextRowStartIndex)
                         remainingWidth = textWidhtFunction(remainingContent, font)
                     }
@@ -287,7 +311,6 @@ export default class Text extends LabelField {
                     (remainingContent != "") &&
                     this.type == "multiline"
                 )
-
                 return {
                     x: finalX,
                     y: finalY,
