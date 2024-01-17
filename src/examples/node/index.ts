@@ -36,7 +36,7 @@ export default async () => {
         const printer = printers[0]
 
         const fontName = "roboto"
-        const testText = "Hello 4 <b>from</b> <u>the <b>other</b> side</u>"
+        const testText = "Hello 4 <b>from</b> <u>the <b>other</b> <s>side</s></u>"
         const fontSize = 25
         const textX = 10
         const textY = 10
@@ -47,14 +47,14 @@ export default async () => {
         const label = new Label(50, 25)
 
         label.registerFont({name: fontName, data: fontRegular, weight: 400, style: "normal"})
-        // label.registerFont({name: fontName, data: fontBold, weight: 700, style: "normal"})
+        label.registerFont({name: fontName, data: fontBold, weight: 700, style: "normal"})
 
-        const text = new Text(testText, textX, textY, false)
+        const text = new Text(testText, textX, textY)
         // const line = new Line({x: textX, y: textY + fontSize}, {x: textX , y: textY + fontSize})
         const line2 = new Line({x: textX - 5, y: textY + fontSize}, {x: textX - 5, y: textY})
 
         text.setFont({name: fontName, size: fontSize})
-        // text.setMultiLine(150)
+        text.setMultiLine(150)
 
         
         label.add(text) // line2

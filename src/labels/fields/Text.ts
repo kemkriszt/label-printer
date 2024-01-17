@@ -16,7 +16,7 @@ type Context = {
 
 type TextDecoration = "underline"|"strike"
 
-const BOLD_WEIGTH = 400
+const BOLD_WEIGTH = 700
 const BOLD_TAG = "b"
 const UNDERLINE_TAG = "u"
 const STRIKE_TAG = "s"
@@ -194,7 +194,7 @@ export default class Text extends LabelField {
                 return {
                     x: initialX + fullWidth,
                     y: initialY,
-                    command: this.textCommand(content, initialX, initialY, font)
+                    command: this.textCommand(content, initialX, initialY, font, features)
                 }
             } else {
                 const commands: Command[] = []
@@ -213,7 +213,7 @@ export default class Text extends LabelField {
                     if(remainingWidth < rowWidth) {
                         finalX = this.x + remainingWidth
                         finalY = y
-                        commands.push(this.textCommand(remainingContent,  x, y, font))
+                        commands.push(this.textCommand(remainingContent,  x, y, font, features))
                         remainingContent = ""
                     } else {
                         // On how many rows this text would fit
@@ -269,7 +269,7 @@ export default class Text extends LabelField {
                         }
 
                         const thisRow = remainingContent.substring(0, rowEndIndex + 1)
-                        commands.push(this.textCommand(thisRow, x, y, font))
+                        commands.push(this.textCommand(thisRow, x, y, font, features))
 
                         // Make sure to move the cursor back to the left side of the text box
                         // as we may have started further into the row
@@ -298,19 +298,49 @@ export default class Text extends LabelField {
             return {
                 x: initialX + fullWidth,
                 y: initialY,
-                command: this.textCommand(content, initialX, initialY, font)
+                command: this.textCommand(content, initialX, initialY, font, features)
             }
         }
     }
 
-    private textCommand(text: string, x: number, y: number, font: FontOption) {
+    private textCommand(text: string, x: number, y: number, font: FontOption, features: TextDecoration[]) {
         if(!this.context) throw "no-context"
         const finalFontSize = dotToPoint(font.size, this.context!.config?.dpi ?? 203)
         const finalFont = this.getFontName(font)
         const finalX = Math.round(x)
         const finalY = Math.round(y)
 
-        return this.context!.generator.text(text, finalX, finalY, finalFont, finalFontSize)
+        let commands: Command[] = []
+        const textCommand = this.context!.generator.text(text, finalX, finalY, finalFont, finalFontSize)
+
+        if(features.length == 0) {
+            return textCommand
+        } else {
+            let lineHeight = font.size * 0.1
+            let textWidth = this.textWithFunction(text, font)
+
+            if(features.includes("strike")) {
+                commands.push(this.textLineCommand(textWidth, x, y, lineHeight, 0.5, font.size))
+            }
+
+            if(features.includes("underline")) {
+                commands.push(this.textLineCommand(textWidth, x, y, lineHeight, 0.9, font.size))
+            }
+
+            commands.push(textCommand)
+        }
+
+        return this.context.generator.commandGroup(commands)
+    }
+
+    private textLineCommand(width: number, x: number, y: number, lineHeight: number, linePercentage: number, fontSize: number): Command {
+        const sy = Math.round(y + (fontSize * linePercentage) - (lineHeight / 2))
+
+        const sx = Math.round(x)
+        return this.context!.generator.line(
+            {x: sx, y: sy}, 
+            {x: sx + width, y: sy}, 
+            lineHeight)
     }
 
     private getFontName(font: FontOption) {
