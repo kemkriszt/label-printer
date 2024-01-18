@@ -57,7 +57,7 @@ export default class Text extends LabelField {
     
     constructor(content: string, x: number, y: number, formatted: boolean = true) {
         super()
-        this.content = content
+        this.content = content.replace("\n", "") // Newline can break text generation
         this.x = x
         this.y = y
         this.formatted = formatted
