@@ -11,14 +11,16 @@ export type Pixels = {
     bitsPerPixel: number
 }
 
-/**
- * Helper type to transmit black and white bitmap data
- */
-export type BWBitmap = {
+export type BitmapLike = {
     width: number,
     height: number,
     bytes: Uint8Array
 }
+
+/**
+ * Helper type to transmit black and white bitmap data
+ */
+export type BWBitmap = BitmapLike
 
 const BLACK_PIXEL = 0
 const WHITE_PIXEL = 1

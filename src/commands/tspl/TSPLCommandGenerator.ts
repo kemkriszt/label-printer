@@ -1,8 +1,10 @@
+import { BitmapLike } from "@/helpers/ImageUtils";
 import { Point, UnitSystem } from "..";
 import CommandGenerator from "../CommandGenerator";
 import TSPLCommand from "./TSPLCommand";
-import { TSPLCLSCommand, TSPLCommandGroup, TSPLDiagonal, TSPLDirectionCommand, TSPLDisplay, TSPLDownload, TSPLGapCommand, TSPLPrintCommand, TSPLRawCommand, TSPLSizeCommand, TSPLTextCommand } from "./commands";
-import { LabelDirection } from "./types";
+import { TSPLBitmapCommand, TSPLCLSCommand, TSPLCommandGroup, TSPLDiagonal, TSPLDirectionCommand, TSPLDisplay, TSPLDownload, TSPLGapCommand, TSPLPrintCommand, TSPLQRCommand, TSPLRawCommand, TSPLSizeCommand, TSPLTextCommand } from "./commands";
+import { Alignment, BarcodeHumanReable, BarcodeType, GraphicMode, LabelDirection, Rotation } from "./types";
+import TSPLBarcodeCommand from "./commands/basic/TSPLBarcodeCommand";
 
 /**
  * Command generator for tspl commands
@@ -45,6 +47,18 @@ class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
 
     line(start: Point, end: Point, thickness: number): TSPLCommand {
         return new TSPLDiagonal(start, end, thickness)
+    }
+    
+    image(image: BitmapLike, x: number, y: number, mode?: GraphicMode | undefined): TSPLCommand {
+        return new TSPLBitmapCommand(image, x, y, mode)
+    }
+
+    qrCode(content: string, width: number, x: number, y: number): TSPLCommand {
+        return new TSPLQRCommand(content, x, y, width / 177)
+    }
+    
+    barCode(content: string, x: number, y: number, type: BarcodeType, height: number, rotation: Rotation, humanReadable: BarcodeHumanReable, alignment: Alignment): TSPLCommand {
+        return new TSPLBarcodeCommand(x, y, type, height, 1, 1, content, rotation, humanReadable, alignment)
     }
 }
 

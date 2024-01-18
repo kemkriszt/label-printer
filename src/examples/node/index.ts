@@ -1,9 +1,7 @@
 import { Label } from "@/labels"
-import { Line, Text } from "@/labels/fields"
+import { Text } from "@/labels/fields"
 import { PrinterService } from "@/printers"
 import fs from "fs"
-import { NodeType, parse, HTMLElement } from "node-html-parser"
-import fontkit from "fontkit"
 
 export default async () => {
     const printers = await PrinterService.getPrinters()
