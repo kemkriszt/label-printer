@@ -5,6 +5,7 @@ import TSPLCommand from "./TSPLCommand";
 import { TSPLBitmapCommand, TSPLCLSCommand, TSPLCommandGroup, TSPLDiagonal, TSPLDirectionCommand, TSPLDisplay, TSPLDownload, TSPLGapCommand, TSPLPrintCommand, TSPLQRCommand, TSPLRawCommand, TSPLSizeCommand, TSPLTextCommand } from "./commands";
 import { Alignment, BarcodeHumanReable, BarcodeType, GraphicMode, LabelDirection, Rotation } from "./types";
 import TSPLBarcodeCommand from "./commands/basic/TSPLBarcodeCommand";
+import { QRLengthMapping } from "@/helpers/QRCodeUtils";
 
 /**
  * Command generator for tspl commands
@@ -54,11 +55,27 @@ class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
     }
 
     qrCode(content: string, width: number, x: number, y: number): TSPLCommand {
-        return new TSPLQRCommand(content, x, y, width / 177)
+        const cellCount = this.cellCount(content)
+        const cellWidth = Math.round(width / cellCount)
+        // We start the content With A to indicate that our data is alphanumeric. 
+        // Not using auto ensures that we can easily calculate the cell with for a given content
+        return new TSPLQRCommand(`A${content}`, x, y, cellWidth, 'H', "M")
     }
     
     barCode(content: string, x: number, y: number, type: BarcodeType, height: number, rotation: Rotation, humanReadable: BarcodeHumanReable, alignment: Alignment): TSPLCommand {
         return new TSPLBarcodeCommand(x, y, type, height, 1, 1, content, rotation, humanReadable, alignment)
+    }
+
+    private cellCount(content: string): number {
+        const limits = Object.keys(QRLengthMapping).map( limit => Number(limit) ).sort((a, b) => a - b)
+        const contentLength = content.length
+
+        let i = 0
+        while(limits[i] < contentLength && i < limits.length - 1) {
+            i ++
+        }
+
+        return QRLengthMapping[limits[i] as keyof typeof QRLengthMapping]
     }
 }
 
