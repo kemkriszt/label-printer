@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.3.0
+
+### Minor Changes
+
+- 0008fe1: Added Label layer
+
 ## 0.2.6
 
 ### Patch Changes
