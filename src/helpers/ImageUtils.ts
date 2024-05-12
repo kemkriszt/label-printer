@@ -1,5 +1,6 @@
 // @ts-ignore
 import pixels from "image-pixels"
+import { getSizePreserveAspect } from "./UnitUtils"
 
 /**
  * Helper type to transmit image bitmap data
@@ -61,9 +62,10 @@ export default class ImageUtils {
             bitsPerPixel
         } = await this.getPixels(image)
     
+        const dim = getSizePreserveAspect(width, height, destinationWidth, destinationHeight)
         // Number of pixels width and height => number of bits for each row and number of rows
-        const dWidth = destinationWidth ?? width
-        const dHeight = destinationHeight ?? height
+        const dWidth = dim.width
+        const dHeight = dim.height
     
         const differenceToDividable = dWidth % 8 == 0 ? 0 : (8 - (dWidth % 8))
         const dividableDWidth = dWidth + differenceToDividable
