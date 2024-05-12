@@ -1,4 +1,6 @@
-# Label Print
+# Label Printer
+
+> :warning: `label-printer` is still under heavy development and is subject to frequent API changes
 
 This package provides a js based implementation for variouse languages used for label printers
 
@@ -36,3 +38,14 @@ This layer contains code to interact with printers
 ## Documentation of supported languages
 
 - [TSPL](documentations/TSPL.pdf)
+
+# Usefull units:
+
+- 1 pt = 1/72 inch
+- 1 dot = 1 / dpi
+
+# Notes
+
+- If a font is not working, make sure the extension is TTF
+- If you want to use bold fonts, make sure you have one for weight 700
+- Regular font weight is 400

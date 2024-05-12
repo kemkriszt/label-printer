@@ -1,4 +1,5 @@
 import TSPLCommand from "../../TSPLCommand";
+import { LabelDirection } from "../../types";
 
 /**
  * This command defines in which direction will the label be printed and wether or not to mirror the image
@@ -12,7 +13,7 @@ export default class TSPLDirectionCommand extends TSPLCommand {
      * @param direction Controls the orientation of the resulting label compared to the printer
      * @param mirror Controls mirroring relative to the center line of the label perpendicular to the printhead. See the documentsion for examples
      */
-    constructor(direction: "normal"|"inverse", mirror?: boolean) {
+    constructor(direction: LabelDirection, mirror?: boolean) {
         super()
         this.direction = direction == "normal" ? 1 : 0
         this.mirror = mirror ? 1 : 0

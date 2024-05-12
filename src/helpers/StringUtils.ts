@@ -21,3 +21,5 @@ export default class StringUtils {
         return decoder.decode(bytes)
     }
 }
+
+export const isWhitespace = (text: string) => text.trim() === ""

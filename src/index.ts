@@ -1,2 +1,3 @@
-export * as commands from "./commands"
-export * as printers from "./printers"
+export * from "./commands"
+export * from "./printers"
+export * from "./labels"

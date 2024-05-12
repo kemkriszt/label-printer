@@ -21,7 +21,7 @@ export const alignmentToNumber = (alignment: Alignment): 0|1|2|3 => {
  * on the values
  */
 export type GraphicMode = "overwrite"|"or"|"xor"
-export type UnitSystem = "imperial"|"metric"|"dot"
+export type LabelDirection = "normal"|"inverse"
 export type ECCLevel = "L"|"M"|"Q"|"H"
 export type AutoManual = "A"|"M"
 export type QRModel = "M1"|"M2"

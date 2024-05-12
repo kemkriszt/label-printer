@@ -41,6 +41,6 @@ export default class TSPLQRCommand extends TSPLVisualCommand {
     }
 
     get commandString(): string {
-        return `QRCODE ${this.x}, ${this.y}, ${this.ecc}, ${this.cellWidth}, ${this.mode}, ${this.rotation}, ${this.model}, ${this.mask}, \"${this.content}\"`
+        return `QRCODE ${this.x}, ${this.y}, ${this.ecc}, ${this.cellWidth}, ${this.mode}, ${this.rotation}, ${this.model}, \"${this.content}\"`
     }
 }
