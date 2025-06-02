@@ -143,7 +143,7 @@ export default class Label extends Printable {
         commands.push(generator.display())
         
         const group = generator.commandGroup(commands)
-        group.print(console.log)
+        // group.print(console.log)
         return group
     }
 
