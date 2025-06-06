@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.4.1
+
+### Patch Changes
+
+- Fix build
+
 ## 0.4.0
 
 ### Minor Changes
