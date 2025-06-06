@@ -49,3 +49,9 @@ This layer contains code to interact with printers
 - If a font is not working, make sure the extension is TTF
 - If you want to use bold fonts, make sure you have one for weight 700
 - Regular font weight is 400
+
+# Update package
+
+- Run `pnpm changeset` to create change
+- Run `pnpm changeset version` to create an update with all the versions
+- Create PR and merge into main
