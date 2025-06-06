@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.4.7
+
+### Patch Changes
+
+- c4f9d60: Remove unsupported imports
+
 ## 0.4.6
 
 ### Patch Changes
