@@ -5,7 +5,7 @@ import { LabelDirection } from "@/commands/tspl";
 import LabelField from "./fields/LabelField";
 import { Font, FontOption, FontStyle, IndexedFontFamily } from "./types";
 import CommandGenerator from "@/commands/CommandGenerator";
-import fontkit from "fontkit"
+import * as fontkit from "fontkit"
 import { dotToPoint, pointsToDots } from "@/helpers/UnitUtils";
 
 const DEFAULT_FONT_WEIGHT = 400

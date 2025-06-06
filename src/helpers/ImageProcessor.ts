@@ -127,8 +127,8 @@ export class ImageProcessor {
    * @returns 
    */
   private static async getImageFromFile(image: string): Promise<ImageData> {
-    const fs = await import('fs');
-    const path = await import('path');
+    const fs = await eval("require")('fs');
+    const path = await eval("require")('path');
     
     if (!fs.existsSync(image)) {
       throw new Error(`Image file not found: ${image}`);
@@ -181,13 +181,13 @@ export class ImageProcessor {
    * @returns Promise with image data
    */
   private static async fetchWithHttps(url: string): Promise<ImageData> {
-    const https = await import('https');
-    const http = await import('http');
+    const https = await eval("require")('https');
+    const http = await eval("require")('http');
     
     return new Promise((resolve, reject) => {
       const client = url.startsWith('https:') ? https : http;
       
-      const request = client.get(url, (response) => {
+      const request = client.get(url, (response: any) => {
         if (response.statusCode !== 200) {
           reject(new Error(`Failed to fetch image: ${response.statusCode} ${response.statusMessage}`));
           return;
@@ -195,7 +195,7 @@ export class ImageProcessor {
         
         const chunks: Buffer[] = [];
         
-        response.on('data', (chunk) => {
+        response.on('data', (chunk: any) => {
           chunks.push(chunk);
         });
         
@@ -214,12 +214,12 @@ export class ImageProcessor {
           }
         });
         
-        response.on('error', (error) => {
+        response.on('error', (error: any) => {
           reject(error);
         });
       });
       
-      request.on('error', (error) => {
+      request.on('error', (error: any) => {
         reject(new Error(`Failed to fetch remote image: ${error.message}`));
       });
       
