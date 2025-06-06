@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.4.3
+
+### Patch Changes
+
+- Trigger build
+
 ## 0.4.2
 
 ### Patch Changes
