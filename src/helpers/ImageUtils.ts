@@ -1,5 +1,3 @@
-// @ts-ignore
-import pixels from "image-pixels"
 import { getSizePreserveAspect } from "./UnitUtils"
 import ImageProcessor from "./ImageProcessor"
 
@@ -37,12 +35,6 @@ export default class ImageUtils {
      * @returns 
      */
     static async getPixels(image: string|Blob): Promise<Pixels> {
-        // const {width, height, data} = await pixels(image) as Omit<Pixels, "bitsPerPixel">
-        // const bitsPerPixel = data.length / height / width
-
-        // return {
-        //     data, width, height, bitsPerPixel
-        // }
         return await ImageProcessor.getImageData(image)
     }
 
