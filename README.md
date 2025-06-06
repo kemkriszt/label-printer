@@ -54,4 +54,4 @@ This layer contains code to interact with printers
 
 - Run `pnpm changeset` to create change
 - Run `pnpm changeset version` to create an update with all the versions
-- Create PR and merge into main
+- PR is automatically created on push, merge it to trigger publish
