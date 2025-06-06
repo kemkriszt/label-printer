@@ -1,5 +1,23 @@
 # label-printer
 
+## 0.3.1
+
+### Patch Changes
+
+- 72a8890: Fix exports
+
+## 0.3.0
+
+### Minor Changes
+
+- 0008fe1: Added Label layer
+
+## 0.2.6
+
+### Patch Changes
+
+- f457da2: Make package not include `usb` in the browser
+
 ## 0.2.5
 
 ### Patch Changes
