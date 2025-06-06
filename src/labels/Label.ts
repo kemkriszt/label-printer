@@ -94,9 +94,12 @@ export default class Label extends Printable {
         }
 
         const fontBuffer = Buffer.from(font.data)
+        const builtFont = fontkit.create(fontBuffer)
+        // @ts-ignore
+        const finalFont = builtFont.fonts ? builtFont.fonts[0] : builtFont
         this.fonts[font.name].fonts[key] = {
             ...font,
-            font: fontkit.create(fontBuffer),
+            font: finalFont,
             alias: `${FONT_PREFIX}${this.fontCounter}.${this.fontExtension}`
         }
         this.fontCounter += 1
@@ -174,6 +177,7 @@ export default class Label extends Printable {
                 const font = familyFonts[name]
                 const fileName = font.alias
 
+                // @ts-ignore
                 return generator.upload(fileName, font.data)
             })
         })

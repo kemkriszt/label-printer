@@ -1,9 +1,28 @@
 # label-printer
 
+## 0.4.3
+
+### Patch Changes
+
+- Trigger build
+
+## 0.4.2
+
+### Patch Changes
+
+- a
+
+## 0.4.1
+
+### Patch Changes
+
+- Fix build
+
 ## 0.4.0
 
 ### Minor Changes
 
+- Make it work in the browser
 - 7095ef4: Remove dependencies that don't support browser import
 
 ## 0.3.1
