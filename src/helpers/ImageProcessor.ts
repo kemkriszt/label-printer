@@ -8,7 +8,6 @@ import { ImageData, parsePNG } from './ImageDataParser';
 export class ImageProcessor {
   /**
    * Get pixel information about an image
-   * 
    * @param image Image to process (local file path, remote URL, data URL, or Blob)
    * @returns Promise with image data including width, height, pixel data, and bits per pixel
    */
