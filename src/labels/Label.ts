@@ -3,7 +3,7 @@ import Printable, { PrintConfig } from "./Printable";
 import { UnitSystem } from "@/commands";
 import { LabelDirection } from "@/commands/tspl";
 import LabelField from "./fields/LabelField";
-import { Font, FontFamily, FontOption, FontStyle, IndexedFontFamily, NamelessFont } from "./types";
+import { Font, FontOption, FontStyle, IndexedFontFamily } from "./types";
 import CommandGenerator from "@/commands/CommandGenerator";
 import fontkit from "fontkit"
 import { dotToPoint, pointsToDots } from "@/helpers/UnitUtils";

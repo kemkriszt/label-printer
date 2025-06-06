@@ -13,20 +13,9 @@ export class ImageProcessor {
    */
   static async getImageData(image: string | Blob): Promise<ImageData> {
     if (typeof window !== 'undefined') {
-      // Browser environment
       return this.getImageDataBrowser(image);
     } else {
-      // @ts-ignore
-      const px = await import('image-pixels');
-      const pixels = px.default
-      const {width, height, data} = await pixels(image)
-      const bitsPerPixel = data.length / height / width
-
-      return {
-          data, width, height, bitsPerPixel
-      }
-      // Node.js environment
-      // return this.getImageDataNode(image);
+      return this.getImageDataNode(image);
     }
   }
 
