@@ -1,5 +1,13 @@
 # label-printer
 
+## 0.4.9
+
+### Patch Changes
+
+- 9b3591e: Trigger publish
+- Updated dependencies [9b3591e]
+  - label-printer@0.4.9
+
 ## 0.4.8
 
 ### Patch Changes
