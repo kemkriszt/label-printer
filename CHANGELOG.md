@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.4.10
+
+### Patch Changes
+
+- cd98bb6: Trigger changeset
+
 ## 0.4.9
 
 ### Patch Changes
