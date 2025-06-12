@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.4.9
+
+### Patch Changes
+
+- 9b3591e: Trigger publish
+
 ## 0.4.8
 
 ### Patch Changes
