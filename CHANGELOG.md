@@ -1,5 +1,13 @@
 # label-printer
 
+## 0.4.8
+
+### Patch Changes
+
+- bff4f85: Improved imports
+- Updated dependencies [bff4f85]
+  - label-printer@0.4.8
+
 ## 0.4.7
 
 ### Patch Changes

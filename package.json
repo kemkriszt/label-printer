@@ -1,6 +1,6 @@
 {
   "name": "label-printer",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "description": "js package providing an abstraction over different thermal printer languages",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "fontkit": "^2.0.4",
-    "label-printer": "^0.4.7",
+    "label-printer": "^0.4.8",
     "node-html-parser": "^6.1.13",
     "usb": "^2.15.0"
   }
