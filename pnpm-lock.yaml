@@ -9,23 +9,26 @@ importers:
   .:
     dependencies:
       fontkit:
-        specifier: ^2.0.2
+        specifier: ^2.0.4
         version: 2.0.4
+      label-printer:
+        specifier: ^0.4.7
+        version: 0.4.7
       node-html-parser:
-        specifier: ^6.1.12
+        specifier: ^6.1.13
         version: 6.1.13
       usb:
-        specifier: ^2.11.0
+        specifier: ^2.15.0
         version: 2.15.0
     devDependencies:
       '@changesets/cli':
-        specifier: ^2.27.1
+        specifier: ^2.29.4
         version: 2.29.4
       '@types/fontkit':
-        specifier: ^2.0.6
+        specifier: ^2.0.8
         version: 2.0.8
       '@types/jest':
-        specifier: ^29.5.11
+        specifier: ^29.5.14
         version: 29.5.14
       '@types/w3c-web-usb':
         specifier: ^1.0.10
@@ -34,7 +37,7 @@ importers:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@22.15.30)(ts-node@10.9.2(@types/node@22.15.30)(typescript@5.8.3))
       ts-jest:
-        specifier: ^29.1.1
+        specifier: ^29.3.4
         version: 29.3.4(@babel/core@7.27.4)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.4))(esbuild@0.25.5)(jest@29.7.0(@types/node@22.15.30)(ts-node@10.9.2(@types/node@22.15.30)(typescript@5.8.3)))(typescript@5.8.3)
       ts-node:
         specifier: ^10.9.2
@@ -43,10 +46,10 @@ importers:
         specifier: ^4.2.0
         version: 4.2.0
       tsup:
-        specifier: ^8.0.1
+        specifier: ^8.5.0
         version: 8.5.0(typescript@5.8.3)
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.8.3
         version: 5.8.3
 
 packages:
@@ -1462,6 +1465,9 @@ packages:
   kleur@3.0.3:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
+
+  label-printer@0.4.7:
+    resolution: {integrity: sha512-JEEOILcK7m/tXvm0kmCaRItIYU5lzC2kbCcc4BDq2/4K7L0XmsswAiHUXuIwY1p/xu9yNilncIKPjH2vacm7SQ==}
 
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
@@ -3829,6 +3835,12 @@ snapshots:
       graceful-fs: 4.2.11
 
   kleur@3.0.3: {}
+
+  label-printer@0.4.7:
+    dependencies:
+      fontkit: 2.0.4
+      node-html-parser: 6.1.13
+      usb: 2.15.0
 
   leven@3.1.0: {}
 
