@@ -3,7 +3,7 @@ import Printable, { PrintConfig } from "./Printable";
 import { UnitSystem } from "@/commands";
 import { LabelDirection } from "@/commands/tspl";
 import LabelField from "./fields/LabelField";
-import { Font, FontOption, FontStyle, IndexedFontFamily } from "./types";
+import { Font, FontOption, FontStyle, IndexedFont, IndexedFontFamily } from "./types";
 import CommandGenerator from "@/commands/CommandGenerator";
 import * as fontkit from "fontkit"
 import { dotToPoint, pointsToDots } from "@/helpers/UnitUtils";
@@ -45,13 +45,18 @@ export default class Label extends Printable {
         return { 
             dpi: this.dpi,
             textWidth: (text, font) => {
-                const size = dotToPoint(font.size, this.dpi)
-                const fontObject = this.getIndexedFont(font).font
-                
-                const run = fontObject.layout(text)
+                const indexedFont = this.getIndexedFont(font)
+                if(indexedFont == null) {
+                    return text.length * font.size
+                } else {
+                    const size = dotToPoint(font.size, this.dpi)
+                    const fontObject = indexedFont.font
+                    
+                    const run = fontObject.layout(text)
 
-                const scaledWidth = size * run.advanceWidth / fontObject.unitsPerEm
-                return pointsToDots(scaledWidth, this.dpi)
+                    const scaledWidth = size * run.advanceWidth / fontObject.unitsPerEm
+                    return pointsToDots(scaledWidth, this.dpi)
+                }
             },
             getFontName: this.getFontName.bind(this)
         } 
@@ -145,9 +150,7 @@ export default class Label extends Printable {
         const commands = await this.fullCommand(language, 0, direction, mirror, 0, generator)
         commands.push(generator.display())
         
-        const group = generator.commandGroup(commands)
-        // group.print(console.log)
-        return group
+        return generator.commandGroup(commands)
     }
 
     /**
@@ -185,9 +188,10 @@ export default class Label extends Printable {
         return generator.commandGroup(commands)
     }
 
-    private getIndexedFont(font: FontOption) {
+    private getIndexedFont(font: FontOption): IndexedFont|null  {
         const family = this.fonts[font.name]
-
+        if (!family) return null
+        
         const style = font.style ?? DEFAULT_FONT_STYLE
         const weigth = font.weight ?? DEFAULT_FONT_WEIGHT
 

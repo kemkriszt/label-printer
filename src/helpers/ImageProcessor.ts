@@ -27,7 +27,6 @@ export class ImageProcessor {
    * @returns Promise with image data
    */
   private static async getImageDataBrowser(image: string | Blob): Promise<ImageData> {
-    console.log('Processing image in browser environment');
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
