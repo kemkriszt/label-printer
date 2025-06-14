@@ -128,7 +128,7 @@ export default class Text extends LabelField {
      * @returns 
      */
     private generatePlainText(): Command {
-        const {command} = this.generatePlainTextCore(this.content, this.x, this.y, this.font)
+        const { command } = this.generatePlainTextCore(this.content, this.x, this.y, this.font)
         return command
     }
 
@@ -161,7 +161,7 @@ export default class Text extends LabelField {
             }
 
             elementNode.childNodes.forEach(node => {
-                const {x,y,command} = this.generateFormattedRecursive(currentX, currentY, node, baseFont, baseFeatures )
+                const {x,y,command} = this.generateFormattedRecursive(currentX, currentY, node, baseFont, baseFeatures)
                 currentX = x
                 currentY = y
                 commands.push(command)
@@ -183,7 +183,7 @@ export default class Text extends LabelField {
     private generatePlainTextCore(content: string, initialX: number, initialY: number, font: FontOption, features: TextDecoration[] = []): {x: number, y: number, command: Command} {
         if(!this.context) throw "context-not-set"
 
-        const textWidhtFunction = this.textWithFunction
+        const textWidhtFunction = this.textWidthFunction
         let fullWidth = textWidhtFunction(content, font)
 
         if(this.width) {
@@ -340,7 +340,7 @@ export default class Text extends LabelField {
             return textCommand
         } else {
             let lineHeight = font.size * 0.1
-            let textWidth = this.textWithFunction(text, font)
+            let textWidth = this.textWidthFunction(text, font)
 
             if(features.includes("strike")) {
                 commands.push(this.textLineCommand(textWidth, x, y, lineHeight, 0.5, font.size))
@@ -375,7 +375,7 @@ export default class Text extends LabelField {
         }
     }
 
-    private get textWithFunction() {
+    private get textWidthFunction() {
         if(this.font.name == "default") {
             return this.defaultTextWidth
         } else {
