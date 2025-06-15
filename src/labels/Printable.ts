@@ -5,6 +5,7 @@ import { FontOption } from "./types";
 
 export type PrintConfig = {
     dpi: number,
+    /** Width of the text in dots */
     textWidth: (text: string, font: FontOption) => number,
     getFontName: (font: FontOption) => string
 }
