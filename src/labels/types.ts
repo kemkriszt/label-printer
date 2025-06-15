@@ -13,7 +13,7 @@ export type Font = {
 
 export type NamelessFont = Omit<Font, "name">
 
-export type FontOption = Expand<Partial<Pick<Font, "style"|"weight">> & Pick<Font, "name"> & {size: number}>
+export type FontOption = Expand<Partial<Pick<Font, "style"|"weight">> & Pick<Font, "name"> & {size: number}> // Size in dots
 
 export type FontFamily = {
     name: string,
