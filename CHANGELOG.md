@@ -1,5 +1,12 @@
 # label-printer
 
+## 0.4.11
+
+### Patch Changes
+
+- 94228ac: Code quality improvments
+- 8f993a1: Code quality improvments
+
 ## 0.4.10
 
 ### Patch Changes
