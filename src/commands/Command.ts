@@ -10,6 +10,16 @@ export default abstract class Command {
      */
     abstract get commandString(): string
 
+    /**
+     * Returns a byte array representation of the command
+     * By default, converts commandString to bytes, but can be overridden for commands
+     * that include binary data (e.g., images, fonts)
+     */
+    get commandBytes(): Uint8Array {
+        const encoder = new TextEncoder()
+        return encoder.encode(this.commandString)
+    }
+
     print(fn: (command: string) => void) {
         fn(this.commandString)
     }

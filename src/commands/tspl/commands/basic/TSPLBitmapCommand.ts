@@ -48,6 +48,15 @@ export default class TSPLBitmapCommand extends TSPLVisualCommand {
         }
     }
 
+    get commandBytes(): Uint8Array {
+        const encoder = new TextEncoder()
+        const commandBytes = encoder.encode(this.commandWithoutBytes)
+        const result = new Uint8Array(commandBytes.length + this.bitmap.bytes.length)
+        result.set(commandBytes, 0)
+        result.set(this.bitmap.bytes, commandBytes.length)
+        return result
+    }
+
     async writeTo(device: Device): Promise<void> {
         await this.writeString(this.commandWithoutBytes, device)
         await this.writeBytes(this.bitmap.bytes, device)

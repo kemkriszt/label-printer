@@ -26,6 +26,16 @@ export default class TSPLDownload extends TSPLCommand {
         return `DOWNLOAD "${this.fileName}", ${this.data.byteLength},`
     }
 
+    get commandBytes(): Uint8Array {
+        const encoder = new TextEncoder()
+        const commandBytes = encoder.encode(this.commandString)
+        const dataBytes = this.data instanceof Uint8Array ? this.data : new Uint8Array(this.data)
+        const result = new Uint8Array(commandBytes.length + dataBytes.length)
+        result.set(commandBytes, 0)
+        result.set(dataBytes, commandBytes.length)
+        return result
+    }
+
     async writeTo(device: Device): Promise<void> {
         await this.writeString(this.commandString, device)
         await this.writeBytes(this.data, device)
