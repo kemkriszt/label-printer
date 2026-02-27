@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.8.0
+
+### Minor Changes
+
+- 9b6ae16: Support for command byte array
+
 ## 0.7.8
 
 ### Patch Changes
