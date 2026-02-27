@@ -35,16 +35,7 @@ export default abstract class CommandGroup<T extends Command> extends Command {
             return new Uint8Array(0)
         }
 
-        const newlineBytes = new Uint8Array([10])
-        const byteArrays: Uint8Array[] = []
-
-        for (let i = 0; i < this.commands.length; i++) {
-            byteArrays.push(this.commands[i].commandBytes)
-            if (i < this.commands.length - 1) {
-                byteArrays.push(newlineBytes)
-            }
-        }
-
+        const byteArrays = this.commands.map(c => c.commandBytes)
         const totalLength = byteArrays.reduce((sum, arr) => sum + arr.length, 0)
         const result = new Uint8Array(totalLength)
         let offset = 0
