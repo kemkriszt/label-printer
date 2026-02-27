@@ -17,7 +17,12 @@ export default abstract class Command {
      */
     get commandBytes(): Uint8Array {
         const encoder = new TextEncoder()
-        return encoder.encode(this.commandString)
+        const encoded = encoder.encode(this.commandString)
+        const terminator = this.commandTerminatorBytes
+        const result = new Uint8Array(encoded.length + terminator.length)
+        result.set(encoded, 0)
+        result.set(terminator, encoded.length)
+        return result
     }
 
     print(fn: (command: string) => void) {

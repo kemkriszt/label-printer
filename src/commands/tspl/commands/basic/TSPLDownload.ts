@@ -30,9 +30,11 @@ export default class TSPLDownload extends TSPLCommand {
         const encoder = new TextEncoder()
         const commandBytes = encoder.encode(this.commandString)
         const dataBytes = this.data instanceof Uint8Array ? this.data : new Uint8Array(this.data)
-        const result = new Uint8Array(commandBytes.length + dataBytes.length)
+        const terminator = this.commandTerminatorBytes
+        const result = new Uint8Array(commandBytes.length + dataBytes.length + terminator.length)
         result.set(commandBytes, 0)
         result.set(dataBytes, commandBytes.length)
+        result.set(terminator, commandBytes.length + dataBytes.length)
         return result
     }
 

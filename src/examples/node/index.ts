@@ -12,7 +12,7 @@ export default async () => {
     const displayOverPrint = true
     const monitorPrinter = false
     const printers = await PrinterService.getPrinters()
-    
+
     if(!monitorPrinter && printers.length > 0) {
         const printer = printers[0]
 
