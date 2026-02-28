@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.9.0
+
+### Minor Changes
+
+- f54cfcf: Add raw byte write method
+
 ## 0.8.1
 
 ### Patch Changes
