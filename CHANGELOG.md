@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.9.1
+
+### Patch Changes
+
+- 5421c2b: Add support for density
+
 ## 0.9.0
 
 ### Minor Changes
