@@ -2,7 +2,7 @@ import { BitmapLike } from "@/helpers/ImageUtils";
 import { Point, UnitSystem } from "..";
 import CommandGenerator from "../CommandGenerator";
 import TSPLCommand from "./TSPLCommand";
-import { TSPLBitmapCommand, TSPLCLSCommand, TSPLCommandGroup, TSPLDiagonal, TSPLDirectionCommand, TSPLDisplay, TSPLDownload, TSPLGapCommand, TSPLPrintCommand, TSPLQRCommand, TSPLRawCommand, TSPLSizeCommand, TSPLTextCommand } from "./commands";
+import { TSPLBitmapCommand, TSPLCLSCommand, TSPLCommandGroup, TSPLDensityCommand, TSPLDiagonal, TSPLDirectionCommand, TSPLDisplay, TSPLDownload, TSPLGapCommand, TSPLPrintCommand, TSPLQRCommand, TSPLRawCommand, TSPLSizeCommand, TSPLTextCommand } from "./commands";
 import { Alignment, BarcodeHumanReable, BarcodeType, GraphicMode, LabelDirection, Rotation } from "./types";
 import TSPLBarcodeCommand from "./commands/basic/TSPLBarcodeCommand";
 import { QRLengthMapping } from "@/helpers/QRCodeUtils";
@@ -28,11 +28,21 @@ class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
         return new TSPLDownload(name, data)
     }
 
-    setUp(width: number, height: number, gap: number, offset: number, direction: LabelDirection, mirror: boolean = false, unitSystem: UnitSystem): TSPLCommand {
+    setUp(
+        width: number,
+        height: number, 
+        gap: number, 
+        offset: number, 
+        direction: LabelDirection, 
+        mirror: boolean = false, 
+        unitSystem: UnitSystem, 
+        density: number
+    ): TSPLCommand {
         const commands = [
             new TSPLSizeCommand(width, height, unitSystem),
             new TSPLGapCommand(gap, offset, unitSystem),
             new TSPLDirectionCommand(direction, mirror),
+            new TSPLDensityCommand(density),
             new TSPLCLSCommand()
         ]
 

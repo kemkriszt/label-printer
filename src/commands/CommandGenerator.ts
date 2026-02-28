@@ -23,5 +23,5 @@ export default interface CommandGenerator<T extends Command> {
     /**
      * This should generate the needed commands to set up a label before printing
      */
-    setUp: (width: number, height: number, gap: number, offset: number, direction: LabelDirection, mirror: boolean, unitSystem: UnitSystem) => T
+    setUp: (width: number, height: number, gap: number, offset: number, direction: LabelDirection, mirror: boolean, unitSystem: UnitSystem, density: number) => T
 }

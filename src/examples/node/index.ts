@@ -2,14 +2,15 @@ import { PrinterService } from "@/printers"
 import { Label } from "@/labels"
 // import classicExample from "./exampleCases/classicExample"
 // import tableExample from "./exampleCases/tableExample"
-import svgExample from "./exampleCases/imageTypesExample"
+// import svgExample from "./exampleCases/imageTypesExample"
+import densityExample from "./exampleCases/densityExample"
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export default async () => {
-    const displayOverPrint = true
+    const displayOverPrint = false
     const monitorPrinter = false
     const printers = await PrinterService.getPrinters()
 
@@ -18,7 +19,7 @@ export default async () => {
 
         // const result = await classicExample()
         // const result = await tableExample()
-        const result = await svgExample()
+        const result = await densityExample(8)
         const labels: Label[] = Array.isArray(result) ? result : [result]
 
         for (const label of labels) {
