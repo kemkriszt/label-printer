@@ -281,38 +281,33 @@ export default class Text extends LabelField {
                         commands.push(this.textCommand(remainingContent,  x, y, font, features))
                         remainingContent = ""
                     } else {
-                        // On how many rows this text would fit
-                        let rows = remainingWidth / rowWidth
+                        // Binary search for the last character index that fits within the current
+                        // row width. This correctly handles proportional fonts where characters
+                        // have different widths, unlike a simple character-count estimate.
+                        let lo = 0, hi = remainingContent.length - 1
+                        let rowEndIndex = -1
+                        while (lo <= hi) {
+                            const mid = Math.floor((lo + hi) / 2)
+                            if (textWidhtFunction(remainingContent.substring(0, mid + 1), font) <= rowWidth) {
+                                rowEndIndex = mid
+                                lo = mid + 1
+                            } else {
+                                hi = mid - 1
+                            }
+                        }
+                        let originalRowEndIndex = rowEndIndex
 
                         // From the second row, all rows are full width
                         rowWidth = this.width
-                        // Which caracter is the last if dividing into the right number of rows
-                        let rowEndIndex = Math.floor(remainingContent.length / rows)
-                        let originalRowEndIndex = rowEndIndex
 
-                        // This means we have to fit a relatively short text into
-                        // a lot of rows which can only happen if the row width is very small
-                        // in this case, we have to go to a new line
-                        // This is used to avoid having to calculate the width of the first character of the current text, to compare with the remainig length
-                        if(rowEndIndex == 0) {
+                        // Even the first character doesn't fit — advance to the next line
+                        if (rowEndIndex < 0) {
                             x = this.x
                             y += font.size + this.lineSpacing
                             continue
                         }
 
-                        // Scenario 1: Current index is in a middle of row
-                        // I am iron m@n
-                        // End this row with the last words last character
-
-                        // Scneraio 2: Current index is space:
-                        // I am iron@man
-                        // No action, but to simplify code, we threat as scenario 1
-
-                        // Scenario 3: Current index is right before a sapce
-                        // I am iro@ man
-                        // Start next row from the first latter
-
-                        // Find the end of the last word
+                        // Walk backward from rowEndIndex to find the end of the last complete word
                         while(
                             ! (
                                 !isWhitespace(remainingContent.charAt(rowEndIndex)) &&
@@ -324,13 +319,23 @@ export default class Text extends LabelField {
                         ) { rowEndIndex -- }
 
                         let nextRowStartIndex = rowEndIndex + 1
-                        // We didn't find a space, we split the text wherever we land
-                        if(rowEndIndex == 0) {
+                        // Explicitly check if the backward walk landed on a real word boundary.
+                        // Using rowEndIndex == 0 as a proxy is wrong: position 0 can itself be
+                        // a valid word end (e.g. "a long…"), which the old code would misidentify
+                        // as "no boundary found" and hard-break at originalRowEndIndex instead,
+                        // potentially overflowing the row width.
+                        const foundWordBoundary =
+                            !isWhitespace(remainingContent.charAt(rowEndIndex)) &&
+                            (rowEndIndex == remainingContent.length - 1 || isWhitespace(remainingContent.charAt(rowEndIndex + 1)))
+
+                        if (!foundWordBoundary) {
+                            // No word boundary found — hard break at the binary-search result
                             rowEndIndex = originalRowEndIndex
                             nextRowStartIndex = originalRowEndIndex + 1
                         } else {
+                            // Skip leading whitespace on the next row
                             while(
-                                isWhitespace(remainingContent.charAt(nextRowStartIndex)) && 
+                                isWhitespace(remainingContent.charAt(nextRowStartIndex)) &&
                                 nextRowStartIndex < remainingContent.length
                             ) { nextRowStartIndex ++ }
                         }

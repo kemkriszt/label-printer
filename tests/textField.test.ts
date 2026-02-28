@@ -44,6 +44,32 @@ test("Text multiline wraps when width is small", async () => {
     expect(lines.filter(l => l.startsWith("TEXT")).length).toBeGreaterThan(1)
 })
 
+test("Text multiline wraps single-char word correctly without overflowing row width", async () => {
+    // "a" fits on row 1, "long" starts row 2 — the word boundary at index 0 must be
+    // recognised as valid rather than triggering a hard-break that overflows rowWidth.
+    // Font size 10, row width 20 → "a " is 20 px (fits), "a long" is 60 px (doesn't).
+    const label = new Label(50, 100)
+
+    const text = new Text("a long text wraps", 0, 0, false)
+    text.setFont({ name: "default", size: 10 })
+    text.setMultiLine(20, 200)
+    label.add(text)
+
+    const lines = await commandStrings(label)
+    const textLines = lines.filter(l => l.startsWith("TEXT"))
+
+    // Extract row content from each TEXT command
+    const rowContents = textLines.map(l => {
+        const match = l.match(/"([^"]*)"$/)
+        return match ? match[1] : ""
+    })
+
+    // The first row must be exactly "a" — not "a l" which would overflow 20 px
+    expect(rowContents[0]).toBe("a")
+    // And there must be more than one row
+    expect(textLines.length).toBeGreaterThan(1)
+})
+
 test("Text formatted supports <p> tags for newlines", async () => {
     const label = new Label(50, 25)
 
