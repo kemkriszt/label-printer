@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.8.1
+
+### Patch Changes
+
+- 25252c0: Include terminator byte in byte array
+
 ## 0.8.0
 
 ### Minor Changes
