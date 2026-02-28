@@ -94,6 +94,17 @@ export default abstract class Printer {
     }
 
     /**
+     * Writes raw bytes to the printer. Useful when bytes were built elsewhere
+     * (e.g. via Command.commandBytes) and transferred over the network to a service
+     * that is responsible for the physical printing.
+     * @param data Bytes to send to the printer
+     */
+    async writeRawBytes(data: Uint8Array | ArrayBuffer): Promise<void> {
+        if(!this.device.opened) await this.device.openAndConfigure()
+        await this.device.writeData(data)
+    }
+
+    /**
      * Check if the device is indeed a printer
      * @param device 
      */
