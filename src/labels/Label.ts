@@ -31,6 +31,7 @@ export default class Label extends Printable {
     private readonly unitSystem: UnitSystem
     private fonts: Record<string, IndexedFontFamily> = {}
     private dpi: number
+    private density: number = 8
 
     /**
     * List of fields on the label
@@ -62,12 +63,19 @@ export default class Label extends Printable {
         } 
     }
 
-    constructor(width: number, height: number, dimensionUnit: UnitSystem = "metric", dpi: number = 203) {
+    constructor(
+        width: number, 
+        height: number, 
+        dimensionUnit: UnitSystem = "metric", 
+        dpi: number = 203,
+        density: number = 8
+    ) {
         super()
         this.width = width
         this.height = height
         this.unitSystem = dimensionUnit
         this.dpi = dpi
+        this.density = density
     }
 
     async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {
@@ -165,7 +173,16 @@ export default class Label extends Printable {
                               generator: CommandGenerator<any>) {
         const commands = [
             this.fontUploadCommands(generator),
-            generator.setUp(this.width, this.height, gap, gapOffset, direction, mirror, this.unitSystem),
+            generator.setUp(
+                this.width, 
+                this.height, 
+                gap, 
+                gapOffset, 
+                direction, 
+                mirror, 
+                this.unitSystem,
+                this.density
+            ),
             (await this.commandForLanguage(language, this.printConfig)),
         ]
         return commands
