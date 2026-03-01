@@ -24,8 +24,7 @@ export default async (density: number): Promise<labels.Label> => {
 
     const text = new labels.Text(testText, textX, textY)
 
-    const lineX = 390
-    const line = new labels.Line({x: lineX, y: 10}, {x: lineX, y: 200}, 2)
+    const line = new labels.Line({x: textX, y: 10}, {x: textX+ textWidth, y: 10}, 2)
 
     text.setFont({name: fontName, size: fontSize})
     text.setMultiLine(textWidth)
