@@ -3,7 +3,7 @@ import LabelField from "./LabelField"
 import { PrintConfig } from "../Printable"
 import { dotToPoint } from "@/helpers/UnitUtils"
 import CommandGenerator from "@/commands/CommandGenerator"
-import { isWhitespace } from "@/helpers/StringUtils"
+import { isWhitespace, isBreakAfterChar } from "@/helpers/StringUtils"
 import { NodeType, parse, HTMLElement, Node } from "node-html-parser"
 import { FontOption } from "../types"
 
@@ -46,6 +46,17 @@ export default class Text extends LabelField {
     private context: Context|undefined = undefined
     private readonly lineSpacing = 1
 
+    /**
+     * Width of the text. 
+     * If set, the text will be clipped to this size
+     * If the type is set to multiline, this is where the text is split to a newline
+     */
+    private width: number|undefined
+    /**
+     * Height of the text box, if empty and the type is multiline, the box can grow infinitely
+     */
+    private height: number|undefined
+
     private endsWithBreak(node: Node): boolean {
         if(node.nodeType == NodeType.TEXT_NODE) {
             return node.innerText.trim() == ""
@@ -69,17 +80,6 @@ export default class Text extends LabelField {
         return false
     }
 
-    /**
-     * Width of the text. 
-     * If set, the text will be clipped to this size
-     * If the type is set to multiline, this is where the text is split to a newline
-     */
-    private width: number|undefined
-    /**
-     * Height of the text box, if empty and the type is multiline, the box can grow infinitely
-     */
-    private height: number|undefined
-    
     constructor(content: string, x: number, y: number, formatted: boolean = true) {
         super()
         this.content = content.replace("\n", "").replace("\"", "\\\"") // Newline can break text generation
@@ -281,56 +281,142 @@ export default class Text extends LabelField {
                         commands.push(this.textCommand(remainingContent,  x, y, font, features))
                         remainingContent = ""
                     } else {
-                        // On how many rows this text would fit
-                        let rows = remainingWidth / rowWidth
+                        // Binary search for the last character index that fits within the current
+                        // row width. This correctly handles proportional fonts where characters
+                        // have different widths, unlike a simple character-count estimate.
+                        let lo = 0, hi = remainingContent.length - 1
+                        let rowEndIndex = -1
+                        while (lo <= hi) {
+                            const mid = Math.floor((lo + hi) / 2)
+                            if (textWidhtFunction(remainingContent.substring(0, mid + 1), font) <= rowWidth) {
+                                rowEndIndex = mid
+                                lo = mid + 1
+                            } else {
+                                hi = mid - 1
+                            }
+                        }
+                        let originalRowEndIndex = rowEndIndex
 
                         // From the second row, all rows are full width
                         rowWidth = this.width
-                        // Which caracter is the last if dividing into the right number of rows
-                        let rowEndIndex = Math.floor(remainingContent.length / rows)
-                        let originalRowEndIndex = rowEndIndex
 
-                        // This means we have to fit a relatively short text into
-                        // a lot of rows which can only happen if the row width is very small
-                        // in this case, we have to go to a new line
-                        // This is used to avoid having to calculate the width of the first character of the current text, to compare with the remainig length
-                        if(rowEndIndex == 0) {
+                        // Even the first character doesn't fit — advance to the next line
+                        if (rowEndIndex < 0) {
                             x = this.x
                             y += font.size + this.lineSpacing
                             continue
                         }
 
-                        // Scenario 1: Current index is in a middle of row
-                        // I am iron m@n
-                        // End this row with the last words last character
-
-                        // Scneraio 2: Current index is space:
-                        // I am iron@man
-                        // No action, but to simplify code, we threat as scenario 1
-
-                        // Scenario 3: Current index is right before a sapce
-                        // I am iro@ man
-                        // Start next row from the first latter
-
-                        // Find the end of the last word
+                        // Walk backward from rowEndIndex to find the end of the last complete word
                         while(
                             ! (
-                                !isWhitespace(remainingContent.charAt(rowEndIndex)) &&
                                 (
-                                    rowEndIndex == remainingContent.length - 1 ||
-                                    isWhitespace(remainingContent.charAt(rowEndIndex + 1))
-                                )
+                                    !isWhitespace(remainingContent.charAt(rowEndIndex)) &&
+                                    (
+                                        rowEndIndex == remainingContent.length - 1 ||
+                                        isWhitespace(remainingContent.charAt(rowEndIndex + 1))
+                                    )
+                                ) ||
+                                isBreakAfterChar(remainingContent.charAt(rowEndIndex))
                             ) && rowEndIndex > 0
                         ) { rowEndIndex -- }
 
                         let nextRowStartIndex = rowEndIndex + 1
-                        // We didn't find a space, we split the text wherever we land
-                        if(rowEndIndex == 0) {
+                        const foundWordBoundary =
+                            (!isWhitespace(remainingContent.charAt(rowEndIndex)) &&
+                            (rowEndIndex == remainingContent.length - 1 || isWhitespace(remainingContent.charAt(rowEndIndex + 1)))) ||
+                            isBreakAfterChar(remainingContent.charAt(rowEndIndex))
+
+                        const MIN_WORD_BREAK_CHARS = 2
+
+                        if (!foundWordBoundary) {
+                            // No word boundary at all — mid-word break at binary-search result
                             rowEndIndex = originalRowEndIndex
                             nextRowStartIndex = originalRowEndIndex + 1
+
+                            // Ensure at least MIN_WORD_BREAK_CHARS go to next line
+                            let wordEnd = originalRowEndIndex + 1
+                            while (wordEnd < remainingContent.length && !isWhitespace(remainingContent.charAt(wordEnd))) {
+                                wordEnd++
+                            }
+                            const charsOnNext = wordEnd - originalRowEndIndex - 1
+                            if (charsOnNext > 0 && charsOnNext < MIN_WORD_BREAK_CHARS) {
+                                const adjusted = originalRowEndIndex - (MIN_WORD_BREAK_CHARS - charsOnNext)
+                                if (adjusted >= 0) {
+                                    rowEndIndex = adjusted
+                                    nextRowStartIndex = adjusted + 1
+                                }
+                            }
+                        } else if (originalRowEndIndex > rowEndIndex) {
+                            // Word boundary found but binary search could fit more characters.
+                            // First, check if the FULL next word fits within a relaxed limit
+                            // based on the correction factor (compensates for fontkit overestimation).
+                            let wordStart = rowEndIndex + 1
+                            while (wordStart <= originalRowEndIndex && isWhitespace(remainingContent.charAt(wordStart))) {
+                                wordStart++
+                            }
+
+                            // Find the end of the full word
+                            let fullWordEnd = wordStart
+                            while (fullWordEnd < remainingContent.length && !isWhitespace(remainingContent.charAt(fullWordEnd))) {
+                                fullWordEnd++
+                            }
+
+                            // Check if the line including the full word fits within rowWidth.
+                            // The global correction factor (applied in textWidth) already reduces
+                            // measurements, so we just check against the actual line width here.
+                            const lineWithFullWord = textWidhtFunction(remainingContent.substring(0, fullWordEnd), font)
+                            if (lineWithFullWord <= rowWidth) {
+                                // Full word fits within tolerance — include it
+                                rowEndIndex = fullWordEnd - 1
+                                nextRowStartIndex = fullWordEnd
+                            } else {
+                                // Full word doesn't fit even with tolerance — try mid-word break.
+                                // Use a fresh binary search within the word to find the optimal
+                                // break point (avoids issues when originalRowEndIndex lands on whitespace).
+                                let lo2 = wordStart, hi2 = fullWordEnd - 1
+                                let midBreak = -1
+                                while (lo2 <= hi2) {
+                                    const mid2 = Math.floor((lo2 + hi2) / 2)
+                                    if (textWidhtFunction(remainingContent.substring(0, mid2 + 1), font) <= rowWidth) {
+                                        midBreak = mid2
+                                        lo2 = mid2 + 1
+                                    } else {
+                                        hi2 = mid2 - 1
+                                    }
+                                }
+
+                                let usedMidWordBreak = false
+                                if (midBreak >= wordStart) {
+                                    let charsOnLine = midBreak - wordStart + 1
+                                    let charsOnNext = fullWordEnd - midBreak - 1
+
+                                    // Ensure at least MIN_WORD_BREAK_CHARS on next line
+                                    if (charsOnNext > 0 && charsOnNext < MIN_WORD_BREAK_CHARS) {
+                                        midBreak -= (MIN_WORD_BREAK_CHARS - charsOnNext)
+                                        charsOnLine = midBreak - wordStart + 1
+                                    }
+
+                                    if (charsOnLine >= MIN_WORD_BREAK_CHARS) {
+                                        rowEndIndex = midBreak
+                                        nextRowStartIndex = midBreak + 1
+                                        usedMidWordBreak = true
+                                    }
+                                }
+
+                                if (!usedMidWordBreak) {
+                                    // Can't mid-word break — fall back to word boundary
+                                    nextRowStartIndex = rowEndIndex + 1
+                                    while(
+                                        isWhitespace(remainingContent.charAt(nextRowStartIndex)) &&
+                                        nextRowStartIndex < remainingContent.length
+                                    ) { nextRowStartIndex ++ }
+                                }
+                            }
                         } else {
+                            // Skip leading whitespace on the next row
                             while(
-                                isWhitespace(remainingContent.charAt(nextRowStartIndex)) && 
+                                isWhitespace(remainingContent.charAt(nextRowStartIndex)) &&
                                 nextRowStartIndex < remainingContent.length
                             ) { nextRowStartIndex ++ }
                         }

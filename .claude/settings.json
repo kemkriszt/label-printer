@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test -- --testPathPattern=textField)",
+      "Read(//Users/kemeneskrisztian/Downloads/**)"
+    ]
+  }
+}

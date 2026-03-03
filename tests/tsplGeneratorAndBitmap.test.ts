@@ -24,7 +24,7 @@ test("TSPLCommandGenerator.qrCode picks cell width based on mapping", () => {
 })
 
 test("TSPLCommandGenerator.setUp groups SIZE/GAP/DIRECTION/CLS", () => {
-    const cmd = tsplGenerator.setUp(50, 25, 2, 0, "normal", false, "metric")
+    const cmd = tsplGenerator.setUp(50, 25, 2, 0, "normal", false, "metric", 8)
     const lines: string[] = []
     cmd.print((c) => lines.push(c))
 
@@ -32,6 +32,7 @@ test("TSPLCommandGenerator.setUp groups SIZE/GAP/DIRECTION/CLS", () => {
         "SIZE 50 mm, 25 mm",
         "GAP 2 mm, 0 mm",
         "DIRECTION 1, 0",
+        "DENSITY 8",
         "CLS",
     ])
 })

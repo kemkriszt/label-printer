@@ -23,3 +23,6 @@ export default class StringUtils {
 }
 
 export const isWhitespace = (text: string) => text.trim() === ""
+
+const BREAK_AFTER_CHARS = new Set([',', ';', ':', '.'])
+export const isBreakAfterChar = (ch: string) => BREAK_AFTER_CHARS.has(ch)
