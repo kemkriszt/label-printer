@@ -151,6 +151,132 @@ test("Text formatted <p> ending with nested <br> does not add an extra newline",
     expect(new Set(ys).size).toBe(2)
 })
 
+test("Text multiline breaks at punctuation characters when no space is present", async () => {
+    // "abc,def" is 70px wide (7 chars * 10px) but row width is 50px.
+    // With punctuation break support, it should break after the comma: "abc," + "def"
+    // Without it, the whole word would hard-break at character level.
+    const label = new Label(50, 100)
+
+    const text = new Text("abc,def", 0, 0, false)
+    text.setFont({ name: "default", size: 10 })
+    text.setMultiLine(50, 200)
+    label.add(text)
+
+    const lines = await commandStrings(label)
+    const textLines = lines.filter(l => l.startsWith("TEXT"))
+    const rowContents = textLines.map(l => {
+        const match = l.match(/"([^"]*)"$/)
+        return match ? match[1] : ""
+    })
+
+    expect(textLines.length).toBe(2)
+    expect(rowContents[0]).toBe("abc,")
+    expect(rowContents[1]).toBe("def")
+})
+
+test("Text multiline mid-word break fills line better than word boundary", async () => {
+    // "foo abcdef ghi" default font size 10, row width 80
+    // "foo abcd" = 80px fits, "foo abcde" = 90px doesn't
+    // Word boundary would give "foo" (30px). Mid-word break gives "foo abcd" (80px).
+    const label = new Label(50, 100)
+    const text = new Text("foo abcdef ghi", 0, 0, false)
+    text.setFont({ name: "default", size: 10 })
+    text.setMultiLine(80, 200)
+    label.add(text)
+
+    const lines = await commandStrings(label)
+    const textLines = lines.filter(l => l.startsWith("TEXT"))
+    const rowContents = textLines.map(l => {
+        const match = l.match(/"([^"]*)"$/)
+        return match ? match[1] : ""
+    })
+
+    expect(rowContents[0]).toBe("foo abcd")
+    expect(rowContents[1]).toBe("ef ghi")
+})
+
+test("Text multiline mid-word break ensures min 2 chars on next line", async () => {
+    // "foo abcde ghi" default font size 10, row width 80
+    // "foo abcd" = 80px fits. Word "abcde" has 4 chars on line, 1 on next → adjust
+    // to 3 chars on line, 2 on next: "foo abc" + "de ghi"
+    const label = new Label(50, 100)
+    const text = new Text("foo abcde ghi", 0, 0, false)
+    text.setFont({ name: "default", size: 10 })
+    text.setMultiLine(80, 200)
+    label.add(text)
+
+    const lines = await commandStrings(label)
+    const textLines = lines.filter(l => l.startsWith("TEXT"))
+    const rowContents = textLines.map(l => {
+        const match = l.match(/"([^"]*)"$/)
+        return match ? match[1] : ""
+    })
+
+    expect(rowContents[0]).toBe("foo abc")
+    expect(rowContents[1]).toBe("de ghi")
+})
+
+test("Text multiline mid-word break moves word to next line if only 1 char fits", async () => {
+    // "foo a ghi" default font size 10, row width 50
+    // "foo a" = 50px fits. But "a" from "abcdef" is only 1 char → fall back to word boundary "foo"
+    const label = new Label(50, 100)
+    const text = new Text("foo abcdef", 0, 0, false)
+    text.setFont({ name: "default", size: 10 })
+    text.setMultiLine(50, 200)
+    label.add(text)
+
+    const lines = await commandStrings(label)
+    const textLines = lines.filter(l => l.startsWith("TEXT"))
+    const rowContents = textLines.map(l => {
+        const match = l.match(/"([^"]*)"$/)
+        return match ? match[1] : ""
+    })
+
+    expect(rowContents[0]).toBe("foo")
+})
+
+test("Text multiline no-boundary mid-word break avoids leaving 1 char on next line", async () => {
+    // "abcdefgh" default font size 10, row width 70
+    // "abcdefg" = 70px fits. Only "h" (1 char) left → adjust to "abcdef" + "gh"
+    const label = new Label(50, 100)
+    const text = new Text("abcdefgh", 0, 0, false)
+    text.setFont({ name: "default", size: 10 })
+    text.setMultiLine(70, 200)
+    label.add(text)
+
+    const lines = await commandStrings(label)
+    const textLines = lines.filter(l => l.startsWith("TEXT"))
+    const rowContents = textLines.map(l => {
+        const match = l.match(/"([^"]*)"$/)
+        return match ? match[1] : ""
+    })
+
+    expect(rowContents[0]).toBe("abcdef")
+    expect(rowContents[1]).toBe("gh")
+})
+
+test("Text multiline prefers space break over earlier punctuation break", async () => {
+    // "ab,c de" is 70px. Row width 60px. "ab,c d" is 60px (fits).
+    // The space after "d" should be preferred over the comma as it keeps more on the line.
+    const label = new Label(50, 100)
+
+    const text = new Text("ab,c de fgh", 0, 0, false)
+    text.setFont({ name: "default", size: 10 })
+    text.setMultiLine(60, 200)
+    label.add(text)
+
+    const lines = await commandStrings(label)
+    const textLines = lines.filter(l => l.startsWith("TEXT"))
+    const rowContents = textLines.map(l => {
+        const match = l.match(/"([^"]*)"$/)
+        return match ? match[1] : ""
+    })
+
+    // Walk-back finds the space after "c" as a traditional word boundary,
+    // so the first row is "ab,c" (40px fits in 60px).
+    expect(rowContents[0]).toBe("ab,c")
+})
+
 test("Text formatted consecutive <p> tags do not create empty lines", async () => {
     const label = new Label(50, 25)
 

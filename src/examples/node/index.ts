@@ -10,7 +10,7 @@ function sleep(ms: number) {
 }
 
 export default async () => {
-    const displayOverPrint = false
+    const displayOverPrint = true
     const monitorPrinter = false
     const printers = await PrinterService.getPrinters()
 

@@ -31,9 +31,8 @@ test("Label printConfig.textWidth uses registered font and converts points to do
 
     const width = label.printConfig.textWidth("A", { name: "test", size: 10, weight: 400, style: "normal" })
 
-    // size=10 dots => dotToPoint(10,203) rounds to 4 points
-    // scaledWidth=4 * 500 / 1000 = 2 points => pointsToDots(2,203) = 2*203/72
-    expect(width).toBeCloseTo((2 * 203) / 72)
+    // size=10 dots * advanceWidth(500) / unitsPerEm(1000) = 5 dots
+    expect(width).toBeCloseTo(5)
 })
 
 test("Label printConfig.getFontName returns font alias for registered fonts", async () => {

@@ -6,9 +6,9 @@ export default async (density: number): Promise<labels.Label> => {
     const fontName = "roboto"
     const testText = "Decoratiuni Mici 200gr Ingr:zahar, amidon de porumb,sirop de glucoza,ulei vegetal,lapte praf,coloranti,E129,E124,E102,praf vanilie,sare 0.001%.Colorantii pot afecta negativ activitatea si atentia copiilor.Valoare energetica/100g: Calorii 406kcal;Proteine 0g;Grasimi 7.2g;Grasimi saturate 5.5g;Grasimi trans <1g;Glucide 85.4g;Zahar 81.6g;Fibre 3.2g Sodiu 27.8g.A se pastra la loc uscat, la temp:+4-+20C. Expira: 26.12.2026"
     const fontSize = 16
-    const textX = 10
-    const textY = 10
-    const textWidth = 390 - textX
+    const textX = 20
+    const textY = 0
+    const textWidth = 300 - textX
 
     const fontRegular = fs.readFileSync(__dirname+"/../Roboto-Regular.ttf").buffer
     const fontBold = fs.readFileSync(__dirname+"/../Roboto-Bold.ttf").buffer
@@ -24,7 +24,7 @@ export default async (density: number): Promise<labels.Label> => {
 
     const text = new labels.Text(testText, textX, textY)
 
-    const line = new labels.Line({x: textX, y: 10}, {x: textX+ textWidth, y: 10}, 2)
+    const line = new labels.Line({x: textX, y: textY}, {x: textX+ textWidth, y: textY}, 2)
 
     text.setFont({name: fontName, size: fontSize})
     text.setMultiLine(textWidth)
