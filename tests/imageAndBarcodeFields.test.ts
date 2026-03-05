@@ -50,7 +50,7 @@ test("Image.create calls ImageUtils.getBWBitmap", async () => {
 test("BarCode.commandForLanguage generates BARCODE command and respects setters", async () => {
     const label = new Label(50, 25)
 
-    const bc = new BarCode("ABC", 1, 2, "CODE128", 50)
+    const bc = new BarCode("ABC", 1, 2, "128", 50)
     bc.setRotation(90)
     bc.setHumanReadable("center")
     label.add(bc)
@@ -58,13 +58,13 @@ test("BarCode.commandForLanguage generates BARCODE command and respects setters"
     const lines = await commandStrings(label)
     const barcode = lines.find(l => l.startsWith("BARCODE"))
     expect(barcode).toBeTruthy()
-    expect(barcode).toContain('"CODE128"')
+    expect(barcode).toContain('"128"')
     expect(barcode).toContain(',90,')
 })
 
 test("BarCode uses 1:1 ratio (narrow === wide) for CODE128", async () => {
     const label = new Label(50, 25)
-    label.add(new BarCode("123", 0, 0, "CODE128", 50, 3))
+    label.add(new BarCode("123", 0, 0, "128", 50, 3))
     const lines = await commandStrings(label)
     const barcode = lines.find(l => l.startsWith("BARCODE"))!
     // narrow=3, wide=3
@@ -73,7 +73,7 @@ test("BarCode uses 1:1 ratio (narrow === wide) for CODE128", async () => {
 
 test("BarCode uses 1:3 ratio (wide = 3×narrow) for CODE39", async () => {
     const label = new Label(50, 25)
-    label.add(new BarCode("ABC", 0, 0, "CODE39", 50, 3))
+    label.add(new BarCode("ABC", 0, 0, "39", 50, 3))
     const lines = await commandStrings(label)
     const barcode = lines.find(l => l.startsWith("BARCODE"))!
     // narrow=3, wide=9

@@ -38,8 +38,8 @@ test("TSPLCommandGenerator.setUp groups SIZE/GAP/DIRECTION/CLS", () => {
 })
 
 test("TSPLBarcodeCommand formats BARCODE with correct HR/alignment numbers", () => {
-    const cmd = new TSPLBarcodeCommand(1, 2, "CODE128", 100, 1, 2, "ABC", 90, "center", "right")
-    expect(cmd.commandString).toBe('BARCODE 1, 2, "CODE128", 100, 2,90, 1, 2,3, "ABC"')
+    const cmd = new TSPLBarcodeCommand(1, 2, "128", 100, 1, 2, "ABC", 90, "center", "right")
+    expect(cmd.commandString).toBe('BARCODE 1, 2, "128", 100, 2,90, 1, 2,3, "ABC"')
 })
 
 test("TSPLBitmapCommand writes header + bytes + terminator and supports mode values", async () => {
