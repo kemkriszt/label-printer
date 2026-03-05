@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npm test -- --testPathPattern=textField)",
-      "Read(//Users/kemeneskrisztian/Downloads/**)"
+      "Read(//Users/kemeneskrisztian/Downloads/**)",
+      "Bash(pnpm test -- --testPathPattern=\"imageAndBarcodeFields\")",
+      "Bash(pnpm test imageAndBarcodeFields)"
     ]
   }
 }

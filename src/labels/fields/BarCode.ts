@@ -9,17 +9,28 @@ export default class BarCode extends LabelField {
     private readonly y: number
     private readonly type: BarcodeType
     private readonly height: number
+    private readonly barWidth: number
     private rotation: Rotation
-    private humanReadable: BarcodeHumanReable 
+    private humanReadable: BarcodeHumanReable
     private readonly alignment: Alignment
 
-    constructor(content: string, x: number, y: number, type: BarcodeType, height: number) {
+    /**
+     * @param content Content to encode
+     * @param x X coordinate in dots
+     * @param y Y coordinate in dots
+     * @param type Barcode symbology
+     * @param height Height of the barcode in dots
+     * @param barWidth Width of the narrow bar element in dots. The wide element width is
+     *                 calculated automatically based on the symbology's standard ratio.
+     */
+    constructor(content: string, x: number, y: number, type: BarcodeType, height: number, barWidth: number = 2) {
         super()
         this.content = content
         this.x = x
         this.y = y
         this.type = type
         this.height = height
+        this.barWidth = barWidth
         this.rotation = 0
         this.humanReadable = "none"
         this.alignment = "left"
@@ -34,6 +45,6 @@ export default class BarCode extends LabelField {
     }
 
     async commandForLanguage(language: PrinterLanguage, _config?: PrintConfig | undefined): Promise<Command> {
-        return await this.commandGeneratorFor(language).barCode(this.content, this.x, this.y, this.type, this.height, this.rotation, this.humanReadable, this.alignment)
+        return await this.commandGeneratorFor(language).barCode(this.content, this.x, this.y, this.type, this.height, this.rotation, this.humanReadable, this.alignment, this.barWidth)
     }
 }

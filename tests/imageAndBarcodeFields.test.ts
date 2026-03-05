@@ -61,3 +61,39 @@ test("BarCode.commandForLanguage generates BARCODE command and respects setters"
     expect(barcode).toContain('"CODE128"')
     expect(barcode).toContain(',90,')
 })
+
+test("BarCode uses 1:1 ratio (narrow === wide) for CODE128", async () => {
+    const label = new Label(50, 25)
+    label.add(new BarCode("123", 0, 0, "CODE128", 50, 3))
+    const lines = await commandStrings(label)
+    const barcode = lines.find(l => l.startsWith("BARCODE"))!
+    // narrow=3, wide=3
+    expect(barcode).toContain(', 3, 3,')
+})
+
+test("BarCode uses 1:3 ratio (wide = 3×narrow) for CODE39", async () => {
+    const label = new Label(50, 25)
+    label.add(new BarCode("ABC", 0, 0, "CODE39", 50, 3))
+    const lines = await commandStrings(label)
+    const barcode = lines.find(l => l.startsWith("BARCODE"))!
+    // narrow=3, wide=9
+    expect(barcode).toContain(', 3, 9,')
+})
+
+test("BarCode uses 1:3 ratio for ITF14", async () => {
+    const label = new Label(50, 25)
+    label.add(new BarCode("12345678901234", 0, 0, "ITF14", 50, 2))
+    const lines = await commandStrings(label)
+    const barcode = lines.find(l => l.startsWith("BARCODE"))!
+    // narrow=2, wide=6
+    expect(barcode).toContain(', 2, 6,')
+})
+
+test("BarCode uses 1:1 ratio for EAN13", async () => {
+    const label = new Label(50, 25)
+    label.add(new BarCode("5901234123457", 0, 0, "EAN13", 50, 4))
+    const lines = await commandStrings(label)
+    const barcode = lines.find(l => l.startsWith("BARCODE"))!
+    // narrow=4, wide=4
+    expect(barcode).toContain(', 4, 4,')
+})
