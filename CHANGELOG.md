@@ -1,5 +1,15 @@
 # label-printer
 
+## 0.10.0
+
+### Minor Changes
+
+- 5ea6b68: Updated barcode support
+
+### Patch Changes
+
+- 0ee323e: Improve line brake in text area
+
 ## 0.9.1
 
 ### Patch Changes
