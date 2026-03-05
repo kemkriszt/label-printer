@@ -15,7 +15,7 @@ export default interface CommandGenerator<T extends Command> {
     line: (start: Point, end: Point, thickness: number) => T
     image: (image: BitmapLike, x: number, y: number, mode?: GraphicMode) => T
     qrCode: (content: string, width: number, x: number, y: number) => T,
-    barCode: (content: string, x: number, y: number, type: BarcodeType, height: number, rotation: Rotation, humanReadable: BarcodeHumanReable, alignment: Alignment) => T
+    barCode: (content: string, x: number, y: number, type: BarcodeType, height: number, rotation: Rotation, humanReadable: BarcodeHumanReable, alignment: Alignment, barWidth?: number) => T
     /**
      * Should instruct the printer to display the image of the label on its screen instead of printing it
      */
