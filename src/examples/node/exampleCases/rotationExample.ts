@@ -8,7 +8,7 @@ const ROTATIONS: Rotation[] = [0, 90, 180, 270]
  * Label 1: The same bitmap shown at all four rotations.
  * An arrow SVG pointing right makes the rotation visually obvious.
  */
-async function imageLabel(index: number): Promise<Label> {
+async function imageLabel(): Promise<Label> {
     // Arrow pointing right — rotation makes direction immediately obvious
     const arrowSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
         <rect width="60" height="60" fill="white"/>
@@ -21,8 +21,20 @@ async function imageLabel(index: number): Promise<Label> {
 
     const [x, y] = [100,100]
     const img = new Image(x, y, bitmap)
-    img.setRotation(ROTATIONS[index])
+    img.setRotation(ROTATIONS[0])
     label.add(img)
+
+    const img2 = new Image(x, y, bitmap)
+    img2.setRotation(ROTATIONS[1])
+    label.add(img2)
+
+    const img3 = new Image(x, y, bitmap)
+    img3.setRotation(ROTATIONS[2])
+    label.add(img3)
+
+    const img4 = new Image(x, y, bitmap)
+    img4.setRotation(ROTATIONS[3])
+    label.add(img4)
 
     return label
 }
@@ -83,10 +95,11 @@ async function qrCodeLabel(index: number): Promise<Label> {
 }
 
 export default async (): Promise<Label[]|Label> => {
-    return [
-        await textLabel(0),
-        await textLabel(1),
-        await textLabel(2),
-        await textLabel(3)
-    ];
+    // return [
+    //     await imageLabel(0),
+    //     await imageLabel(1),
+    //     await imageLabel(2),
+    //     await imageLabel(3)
+    // ];
+    return  await imageLabel()
 }

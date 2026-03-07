@@ -29,11 +29,23 @@ export default class Image extends LabelField {
     }
 
     async commandForLanguage(language: PrinterLanguage, _config?: PrintConfig | undefined): Promise<Command> {
+        if (this.rotation === 0) {
+            return await this.commandGeneratorFor(language).image(this.image, this.x, this.y)
+        }
 
-        const bitmap = this.rotation !== 0
-            ? ImageUtils.rotateBWBitmap(this.image, 360 - this.rotation as 90 | 180 | 270)
-            : this.image
-        return await this.commandGeneratorFor(language).image(bitmap, this.x, this.y)
+        const srcW = this.image.width * 8  // original width in dots
+        const srcH = this.image.height     // original height in dots
+        const bitmap = ImageUtils.rotateBWBitmap(this.image, 360 - this.rotation as 90 | 180 | 270)
+
+        let dx = this.x
+        let dy = this.y
+        switch (this.rotation) {
+            case 90:  dx = this.x - srcH; break
+            case 180: dx = this.x - srcW; dy = this.y - srcH; break
+            case 270: dy = this.y - srcW; break
+        }
+
+        return await this.commandGeneratorFor(language).image(bitmap, dx, dy)
     }
 
     /**
