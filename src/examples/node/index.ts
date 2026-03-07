@@ -3,8 +3,9 @@ import { Label } from "@/labels"
 // import classicExample from "./exampleCases/classicExample"
 // import tableExample from "./exampleCases/tableExample"
 // import svgExample from "./exampleCases/imageTypesExample"
-import barcodeExample from "./exampleCases/barcodeExample"
+// import barcodeExample from "./exampleCases/barcodeExample"
 // import densityExample from "./exampleCases/densityExample"
+import rotationExample from "./exampleCases/rotationExample"
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -20,8 +21,9 @@ export default async () => {
 
         // const result = await classicExample()
         // const result = await tableExample()
-        const result = await barcodeExample()
+        // const result = await barcodeExample()
         // const result = await densityExample(8)
+        const result = await rotationExample()
         const labels: Label[] = Array.isArray(result) ? result : [result]
 
         for (const label of labels) {

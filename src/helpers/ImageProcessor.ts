@@ -87,7 +87,6 @@ export class ImageProcessor {
    * @returns Promise with image data
    */
   private static async getImageDataNode(image: string | Blob, _target?: { width: number; height: number }): Promise<ImageData> {
-    console.log('Processing image in Node.js environment');
     // For Node.js, we'll use a simple approach with built-in modules
     if (image instanceof Blob) {
       throw new Error('Blob input not supported in Node.js environment. Use file path or data URL instead.');
@@ -289,7 +288,6 @@ export class ImageProcessor {
    */
   private static parse(buffer: Buffer, extension: string): ImageData {
     const normalizedExtension = extension.startsWith(".") ? extension.slice(1) : extension
-    console.log(`Parsing image with extension: ${normalizedExtension}`);
 
     if (normalizedExtension === 'png') {
       return parsePNG(buffer);

@@ -19,9 +19,9 @@ class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
         return new TSPLPrintCommand(sets, copiesPerSet)
     }
 
-    text(content: string, x: number, y: number, font: string|"default", size: number): TSPLCommand {
+    text(content: string, x: number, y: number, font: string|"default", size: number, rotation?: Rotation): TSPLCommand {
         const fontName = font == "default" ? "0" : font
-        return new TSPLTextCommand(content, x, y, fontName, 0, size, size, "left")
+        return new TSPLTextCommand(content, x, y, fontName, rotation ?? 0, size, size, "left")
     }
 
     upload(name: string, data: ArrayBuffer | Uint8Array): TSPLCommand {
@@ -64,12 +64,12 @@ class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
         return new TSPLBitmapCommand(image, x, y, mode)
     }
 
-    qrCode(content: string, width: number, x: number, y: number): TSPLCommand {
+    qrCode(content: string, width: number, x: number, y: number, rotation?: Rotation): TSPLCommand {
         const cellCount = this.cellCount(content)
         const cellWidth = Math.round(width / cellCount)
-        // We start the content With A to indicate that our data is alphanumeric. 
+        // We start the content With A to indicate that our data is alphanumeric.
         // Not using auto ensures that we can easily calculate the cell with for a given content
-        return new TSPLQRCommand(`A${content}`, x, y, cellWidth, 'H', "M")
+        return new TSPLQRCommand(`A${content}`, x, y, cellWidth, 'H', "M", rotation ?? 0)
     }
     
     barCode(content: string, x: number, y: number, type: BarcodeType, height: number, rotation: Rotation, humanReadable: BarcodeHumanReable, alignment: Alignment, barWidth: number = 2): TSPLCommand {

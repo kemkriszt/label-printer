@@ -4,7 +4,8 @@
       "Bash(npm test -- --testPathPattern=textField)",
       "Read(//Users/kemeneskrisztian/Downloads/**)",
       "Bash(pnpm test -- --testPathPattern=\"imageAndBarcodeFields\")",
-      "Bash(pnpm test imageAndBarcodeFields)"
+      "Bash(pnpm test imageAndBarcodeFields)",
+      "Bash(npx tsc --noEmit)"
     ]
   }
 }

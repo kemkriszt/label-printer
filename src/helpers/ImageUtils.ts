@@ -342,6 +342,65 @@ export default class ImageUtils {
         fs.writeFileSync(filePath, bytes)
     }
 
+    /**
+     * Rotate a BW bitmap by 90, 180 or 270 degrees clockwise.
+     * The bitmap uses 0=black, 1=white with MSB-first packing.
+     */
+    static rotateBWBitmap(bitmap: BWBitmap, rotation: 90 | 180 | 270): BWBitmap {
+        const srcWidthBytes = bitmap.width
+        const srcWidthBits = srcWidthBytes * 8
+        const srcHeight = bitmap.height
+        const src = bitmap.bytes
+
+        const getBit = (col: number, row: number): 0 | 1 => {
+            const byteIndex = row * srcWidthBytes + (col >> 3)
+            const bitIndex = 7 - (col & 7)
+            return ((src[byteIndex] >> bitIndex) & 1) as 0 | 1
+        }
+
+        let dstWidthBits: number
+        let dstHeight: number
+        let getNewPixel: (col: number, row: number) => 0 | 1
+
+        if (rotation === 90) {
+            // 90° CW: new dimensions = H × W_px
+            dstWidthBits = srcHeight
+            dstHeight = srcWidthBits
+            getNewPixel = (col, row) => getBit(srcWidthBits - 1 - row, col)
+        } else if (rotation === 270) {
+            // 270° CW: new dimensions = H × W_px
+            dstWidthBits = srcHeight
+            dstHeight = srcWidthBits
+            getNewPixel = (col, row) => getBit(row, srcHeight - 1 - col)
+        } else {
+            // 180°: same dimensions
+            dstWidthBits = srcWidthBits
+            dstHeight = srcHeight
+            getNewPixel = (col, row) => getBit(srcWidthBits - 1 - col, srcHeight - 1 - row)
+        }
+
+        const dstPad = dstWidthBits % 8 === 0 ? 0 : 8 - (dstWidthBits % 8)
+        const dstWidthBitsPadded = dstWidthBits + dstPad
+        const dstWidthBytes = dstWidthBitsPadded / 8
+        // Fill with 0xff (all white) so padding bits default to white
+        const dst = new Uint8Array(dstWidthBytes * dstHeight).fill(0xff)
+
+        for (let row = 0; row < dstHeight; row++) {
+            for (let col = 0; col < dstWidthBits; col++) {
+                const bit = getNewPixel(col, row)
+                const byteIndex = row * dstWidthBytes + (col >> 3)
+                const mask = 1 << (7 - (col & 7))
+                if (bit === 1) {
+                    dst[byteIndex] |= mask
+                } else {
+                    dst[byteIndex] &= (~mask) & 0xff
+                }
+            }
+        }
+
+        return { width: dstWidthBytes, height: dstHeight, bytes: dst }
+    }
+
     private static dilateOnce(bitmap: BWBitmap): BWBitmap {
         const widthBytes = bitmap.width
         const widthBits = widthBytes * 8
