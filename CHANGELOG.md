@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.11.0
+
+### Minor Changes
+
+- b88ef47: Support image rotation
+
 ## 0.10.0
 
 ### Minor Changes
