@@ -600,17 +600,19 @@ export default class Text extends LabelField {
 
     private get textWidthFunction() {
         if(this.font.name == "default") {
-            return this.defaultTextWidth
+            return (text: string, font: FontOption) => this.defaultTextWidth(text, font)
         } else {
-            return this.context?.config?.textWidth ?? this.defaultTextWidth
+            return this.context?.config?.textWidth ?? ((text: string, font: FontOption) => this.defaultTextWidth(text, font))
         }
     }
 
     /**
-     * This function is used to calculate the font size if no
-     * print config is provided. This will asume that the font has square characters
+     * Fallback width estimate when no font metrics are available.
+     * Uses the TSPL x-multiplication value (dotToPoint of the dot size) as
+     * the per-character width, which matches the rendered width of font "0".
      */
-    private defaultTextWidth(text: string, font: FontOption) {
-        return text.length * font.size
+    private defaultTextWidth(text: string, font: FontOption): number {
+        const dpi = this.context?.config?.dpi ?? 203
+        return text.length * dotToPoint(font.size, dpi)
     }
 }
