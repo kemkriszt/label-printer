@@ -43,10 +43,10 @@ async function textLabel(index: number): Promise<Label> {
     const content = "<b>Hello</b> <i>World</i><br>Line two<br><u>Line three</u>"
     const fontSize = 14
 
-     const text = new Text(content, 100, 100)
-        text.setFont({ name: "default", size: fontSize })
-        text.setRotation(ROTATIONS[index])
-        label.add(text)
+    const text = new Text(content, 150, 150)
+    text.setFont({ name: "default", size: fontSize })
+    text.setRotation(ROTATIONS[index])
+    label.add(text)
 
     return label
 }

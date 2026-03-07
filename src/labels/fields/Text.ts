@@ -144,9 +144,9 @@ export default class Text extends LabelField {
     private advanceLine(x: number, y: number, lineHeight: number): {x: number, y: number} {
         switch (this.rotation) {
             case 0:   return {x: this.x, y: y + lineHeight}
-            case 90:  return {x: x - lineHeight, y: this.y}  // 90° CW: lines stack leftward
+            case 90:  return {x: x - lineHeight, y: this.y}  // 90° CW: lines stack leftward (-x)
             case 180: return {x: this.x, y: y - lineHeight}
-            case 270: return {x: x + lineHeight, y: this.y}  // 270° CW: lines stack rightward
+            case 270: return {x: x + lineHeight, y: this.y}  // 270° CW: lines stack rightward (+x)
         }
     }
 
@@ -572,8 +572,8 @@ export default class Text extends LabelField {
                 end   = {x: Math.round(x) + Math.round(width), y: start.y}
                 break
             case 90:
-                // 90° CW: chars go downward, underline is offset rightward (+x), line runs downward (+y)
-                start = {x: Math.round(x) + offset, y: Math.round(y)}
+                // 90° CW: chars go downward (+y), lines stack leftward (-x); underline offset in -x
+                start = {x: Math.round(x) - offset, y: Math.round(y)}
                 end   = {x: start.x, y: Math.round(y) + Math.round(width)}
                 break
             case 180:
@@ -581,8 +581,8 @@ export default class Text extends LabelField {
                 end   = {x: Math.round(x) - Math.round(width), y: start.y}
                 break
             case 270:
-                // 270° CW: chars go upward, underline is offset leftward (-x), line runs upward (-y)
-                start = {x: Math.round(x) - offset, y: Math.round(y)}
+                // 270° CW: chars go upward (-y), lines stack rightward (+x); underline offset in +x
+                start = {x: Math.round(x) + offset, y: Math.round(y)}
                 end   = {x: start.x, y: Math.round(y) - Math.round(width)}
                 break
         }
