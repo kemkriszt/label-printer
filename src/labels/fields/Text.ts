@@ -6,6 +6,7 @@ import CommandGenerator from "@/commands/CommandGenerator"
 import { isWhitespace, isBreakAfterChar } from "@/helpers/StringUtils"
 import { NodeType, parse, HTMLElement, Node } from "node-html-parser"
 import { FontOption } from "../types"
+import { Rotation } from "@/commands/tspl"
 
 export type TextFieldType = "singleline"|"multiline"
 type Context = {
@@ -43,6 +44,7 @@ export default class Text extends LabelField {
     private readonly formatted: boolean
     private font: FontOption = {name: "default", size: 10}
     private type: TextFieldType = "singleline"
+    private rotation: Rotation = 0
     private context: Context|undefined = undefined
     private readonly lineSpacing = 1
 
@@ -110,12 +112,72 @@ export default class Text extends LabelField {
     }
 
     /**
-     * Set a font to use as a base. If no formatting is set on the text with a html tag, this will be used 
+     * Set a font to use as a base. If no formatting is set on the text with a html tag, this will be used
      * Note: The font name either has to be a built in font on your printer or a font
      * that is registered on the label using 'registerFont'.
      */
     setFont(font: FontOption) {
         this.font = font
+    }
+
+    /**
+     * Set the rotation of the text field. All text commands in this field will be rotated.
+     * For multiline text, lines advance perpendicular to the character direction.
+     */
+    setRotation(rotation: Rotation) {
+        this.rotation = rotation
+    }
+
+    // --- Rotation-aware position helpers ---
+
+    /** Advance cursor by `amount` along the character direction */
+    private advanceChar(x: number, y: number, amount: number): {x: number, y: number} {
+        switch (this.rotation) {
+            case 0:   return {x: x + amount, y}
+            case 90:  return {x, y: y + amount}   // 90° CW: chars go downward
+            case 180: return {x: x - amount, y}
+            case 270: return {x, y: y - amount}   // 270° CW: chars go upward
+        }
+    }
+
+    /** Advance to the next line (reset char axis, advance in line direction) */
+    private advanceLine(x: number, y: number, lineHeight: number): {x: number, y: number} {
+        switch (this.rotation) {
+            case 0:   return {x: this.x, y: y + lineHeight}
+            case 90:  return {x: x - lineHeight, y: this.y}  // 90° CW: lines stack leftward (-x)
+            case 180: return {x: this.x, y: y - lineHeight}
+            case 270: return {x: x + lineHeight, y: this.y}  // 270° CW: lines stack rightward (+x)
+        }
+    }
+
+    /** How far into the current line the cursor is (for width constraint calc) */
+    private charOffset(x: number, y: number): number {
+        switch (this.rotation) {
+            case 0:   return x - this.x
+            case 90:  return y - this.y   // 90° CW: char axis is +y
+            case 180: return this.x - x
+            case 270: return this.y - y   // 270° CW: char axis is -y
+        }
+    }
+
+    /** How many lines deep we are (for height constraint calc) */
+    private lineOffset(x: number, y: number): number {
+        switch (this.rotation) {
+            case 0:   return y - this.y
+            case 90:  return this.x - x  // 90° CW: line axis is -x
+            case 180: return this.y - y
+            case 270: return x - this.x  // 270° CW: line axis is +x
+        }
+    }
+
+    /** Whether the cursor is at the start of its line (char axis at origin) */
+    private atLineStart(x: number, y: number): boolean {
+        switch (this.rotation) {
+            case 0:
+            case 180: return x === this.x
+            case 90:
+            case 270: return y === this.y
+        }
     }
 
     async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {
@@ -169,9 +231,10 @@ export default class Text extends LabelField {
             const tag = elementNode.rawTagName
 
             if(tag == BREAK_TAG) {
+                const linePos = this.advanceLine(initialX, initialY, font.size + this.lineSpacing)
                 return {
-                    x: this.x,
-                    y: initialY + font.size + this.lineSpacing,
+                    x: linePos.x,
+                    y: linePos.y,
                     command: this.context!.generator.commandGroup([])
                 }
             }
@@ -196,9 +259,10 @@ export default class Text extends LabelField {
             // Treat paragraphs as block-level elements: start and end on a new line.
             // Avoid adding an extra leading newline if the paragraph starts at the field origin.
             if(tag == PARAGRAPH_TAG) {
-                if(initialX != this.x) {
-                    currentX = this.x
-                    currentY = initialY + baseFont.size + this.lineSpacing
+                if(!this.atLineStart(initialX, initialY)) {
+                    const linePos = this.advanceLine(initialX, initialY, baseFont.size + this.lineSpacing)
+                    currentX = linePos.x
+                    currentY = linePos.y
                 }
             }
 
@@ -211,8 +275,9 @@ export default class Text extends LabelField {
 
             if(tag == PARAGRAPH_TAG) {
                 if(!this.endsWithBreak(elementNode)) {
-                    currentX = this.x
-                    currentY += baseFont.size + this.lineSpacing
+                    const linePos = this.advanceLine(currentX, currentY, baseFont.size + this.lineSpacing)
+                    currentX = linePos.x
+                    currentY = linePos.y
                 }
             }
 
@@ -236,28 +301,30 @@ export default class Text extends LabelField {
         let fullWidth = textWidhtFunction(content, font)
 
         if(this.width) {
-            const initialPadding = initialX - this.x
+            const initialPadding = this.charOffset(initialX, initialY)
             // Because we may start from further in the row, the first rows width may be smaller
             let rowWidth = this.width - initialPadding
-            // In theory rowWidth should not be negative, but for some reson it happens.. as a quick work around we make sure it is not negative
+            // In theory rowWidth should not be negative, but for some reason it happens.. as a quick work around we make sure it is not negative
             if(rowWidth <= 0) {
                 rowWidth = this.width
-                initialX = this.x
-                initialY += font.size + this.lineSpacing
+                const linePos = this.advanceLine(initialX, initialY, font.size + this.lineSpacing)
+                initialX = linePos.x
+                initialY = linePos.y
             }
 
-            // Make sure we don't print spaces at the beginig of a row
-            if(initialX == this.x) {
+            // Make sure we don't print spaces at the beginning of a row
+            if(this.atLineStart(initialX, initialY)) {
                 content = content.trimStart()
                 fullWidth = textWidhtFunction(content, font)
             }
 
-            // We may not start from the begining of the textbox so we have to offset
+            // We may not start from the beginning of the textbox so we have to offset
             // by our current position
             if(fullWidth <= rowWidth) {
+                const end = this.advanceChar(initialX, initialY, fullWidth)
                 return {
-                    x: initialX + fullWidth,
-                    y: initialY,
+                    x: end.x,
+                    y: end.y,
                     command: this.textCommand(content, initialX, initialY, font, features)
                 }
             } else {
@@ -273,10 +340,11 @@ export default class Text extends LabelField {
                 let finalY = y
 
                 do {
-                    // This will be the last row of the text. 
+                    // This will be the last row of the text.
                     if(remainingWidth < rowWidth) {
-                        finalX = x + remainingWidth
-                        finalY = y
+                        const end = this.advanceChar(x, y, remainingWidth)
+                        finalX = end.x
+                        finalY = end.y
 
                         commands.push(this.textCommand(remainingContent,  x, y, font, features))
                         remainingContent = ""
@@ -302,8 +370,9 @@ export default class Text extends LabelField {
 
                         // Even the first character doesn't fit — advance to the next line
                         if (rowEndIndex < 0) {
-                            x = this.x
-                            y += font.size + this.lineSpacing
+                            const linePos = this.advanceLine(x, y, font.size + this.lineSpacing)
+                            x = linePos.x
+                            y = linePos.y
                             continue
                         }
 
@@ -425,15 +494,16 @@ export default class Text extends LabelField {
                         commands.push(this.textCommand(thisRow, x, y, font, features))
 
                         if(nextRowStartIndex == remainingContent.length) {
-                            finalX = x + remainingWidth
-                            finalY = y
+                            const end = this.advanceChar(x, y, remainingWidth)
+                            finalX = end.x
+                            finalY = end.y
                         }
 
-                        // Make sure to move the cursor back to the left side of the text box
-                        // as we may have started further into the row
-                        x = this.x
-                        y += font.size + this.lineSpacing
-                        currentHeight = y - this.y
+                        // Move cursor to the start of the next line
+                        const linePos = this.advanceLine(x, y, font.size + this.lineSpacing)
+                        x = linePos.x
+                        y = linePos.y
+                        currentHeight = this.lineOffset(x, y)
 
                         remainingContent = remainingContent.substring(nextRowStartIndex)
                         remainingWidth = textWidhtFunction(remainingContent, font)
@@ -453,9 +523,10 @@ export default class Text extends LabelField {
                 }
             }
         } else {
+            const end = this.advanceChar(initialX, initialY, fullWidth)
             return {
-                x: initialX + fullWidth,
-                y: initialY,
+                x: end.x,
+                y: end.y,
                 command: this.textCommand(content, initialX, initialY, font, features)
             }
         }
@@ -469,7 +540,7 @@ export default class Text extends LabelField {
         const finalY = Math.round(y)
 
         let commands: Command[] = []
-        const textCommand = this.context!.generator.text(text, finalX, finalY, finalFont, finalFontSize)
+        const textCommand = this.context!.generator.text(text, finalX, finalY, finalFont, finalFontSize, this.rotation)
 
         if(features.length == 0) {
             return textCommand
@@ -492,13 +563,30 @@ export default class Text extends LabelField {
     }
 
     private textLineCommand(width: number, x: number, y: number, lineHeight: number, linePercentage: number, fontSize: number): Command {
-        const sy = Math.round(y + (fontSize * linePercentage) - (lineHeight / 2))
-
-        const sx = Math.round(x)
-        return this.context!.generator.line(
-            {x: sx, y: sy}, 
-            {x: sx + width, y: sy}, 
-            lineHeight)
+        const offset = Math.round(fontSize * linePercentage - lineHeight / 2)
+        let start: {x: number, y: number}
+        let end: {x: number, y: number}
+        switch (this.rotation) {
+            case 0:
+                start = {x: Math.round(x), y: Math.round(y) + offset}
+                end   = {x: Math.round(x) + Math.round(width), y: start.y}
+                break
+            case 90:
+                // 90° CW: chars go downward (+y), lines stack leftward (-x); underline offset in -x
+                start = {x: Math.round(x) - offset, y: Math.round(y)}
+                end   = {x: start.x, y: Math.round(y) + Math.round(width)}
+                break
+            case 180:
+                start = {x: Math.round(x), y: Math.round(y) - offset}
+                end   = {x: Math.round(x) - Math.round(width), y: start.y}
+                break
+            case 270:
+                // 270° CW: chars go upward (-y), lines stack rightward (+x); underline offset in +x
+                start = {x: Math.round(x) + offset, y: Math.round(y)}
+                end   = {x: start.x, y: Math.round(y) - Math.round(width)}
+                break
+        }
+        return this.context!.generator.line(start!, end!, lineHeight)
     }
 
     private getFontName(font: FontOption) {
@@ -512,17 +600,19 @@ export default class Text extends LabelField {
 
     private get textWidthFunction() {
         if(this.font.name == "default") {
-            return this.defaultTextWidth
+            return (text: string, font: FontOption) => this.defaultTextWidth(text, font)
         } else {
-            return this.context?.config?.textWidth ?? this.defaultTextWidth
+            return this.context?.config?.textWidth ?? ((text: string, font: FontOption) => this.defaultTextWidth(text, font))
         }
     }
 
     /**
-     * This function is used to calculate the font size if no
-     * print config is provided. This will asume that the font has square characters
+     * Fallback width estimate when no font metrics are available.
+     * Uses the TSPL x-multiplication value (dotToPoint of the dot size) as
+     * the per-character width, which matches the rendered width of font "0".
      */
-    private defaultTextWidth(text: string, font: FontOption) {
-        return text.length * font.size
+    private defaultTextWidth(text: string, font: FontOption): number {
+        const dpi = this.context?.config?.dpi ?? 203
+        return text.length * dotToPoint(font.size, dpi)
     }
 }

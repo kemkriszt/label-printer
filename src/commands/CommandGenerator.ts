@@ -10,11 +10,11 @@ import { BitmapLike } from "@/helpers/ImageUtils";
 export default interface CommandGenerator<T extends Command> {
     commandGroup: (commands: T[]) => CommandGroup<T>
     print: (sets: number, copiesPerSet: number) => T
-    text: (content: string, x: number, y: number, font: string|"default", size: number) => T
+    text: (content: string, x: number, y: number, font: string|"default", size: number, rotation?: Rotation) => T
     upload: (name: string, data: ArrayBuffer|Uint8Array) => T
     line: (start: Point, end: Point, thickness: number) => T
     image: (image: BitmapLike, x: number, y: number, mode?: GraphicMode) => T
-    qrCode: (content: string, width: number, x: number, y: number) => T,
+    qrCode: (content: string, width: number, x: number, y: number, rotation?: Rotation) => T,
     barCode: (content: string, x: number, y: number, type: BarcodeType, height: number, rotation: Rotation, humanReadable: BarcodeHumanReable, alignment: Alignment, barWidth?: number) => T
     /**
      * Should instruct the printer to display the image of the label on its screen instead of printing it
