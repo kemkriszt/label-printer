@@ -1,4 +1,5 @@
-import { Alignment, Rotation, alignmentToNumber } from "../../types";
+import { Alignment, alignmentToNumber } from "@/commands/tspl";
+import { Rotation } from "@/commands";
 import TSPLVisualCommand from "../TSPLVisualCommand";
 
 /**

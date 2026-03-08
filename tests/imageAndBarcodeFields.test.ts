@@ -7,6 +7,7 @@ jest.mock("@/helpers/ImageUtils", () => {
         __esModule: true,
         default: {
             getBWBitmap: jest.fn(),
+            rotateBWBitmap: jest.fn(),
         }
     }
 })
@@ -96,4 +97,47 @@ test("BarCode uses 1:1 ratio for EAN13", async () => {
     const barcode = lines.find(l => l.startsWith("BARCODE"))!
     // narrow=4, wide=4
     expect(barcode).toContain(', 4, 4,')
+})
+
+const rotatedBitmap = { width: 1, height: 8, bytes: new Uint8Array([0x01]) }
+
+test("Image.commandForLanguage rotates bitmap for rotation 90", async () => {
+    ;(ImageUtils.rotateBWBitmap as unknown as jest.Mock).mockReturnValue(rotatedBitmap)
+
+    const label = new Label(50, 25)
+    const image = new Image(10, 20, { width: 1, height: 8, bytes: new Uint8Array([0xFF]) })
+    image.setRotation(90)
+    label.add(image)
+
+    const lines = await commandStrings(label)
+    expect(lines.some(l => l.startsWith("BITMAP"))).toBe(true)
+    // 360 - 90 = 270 passed to rotateBWBitmap
+    expect(ImageUtils.rotateBWBitmap).toHaveBeenCalledWith(expect.anything(), 270)
+})
+
+test("Image.commandForLanguage rotates bitmap for rotation 180", async () => {
+    ;(ImageUtils.rotateBWBitmap as unknown as jest.Mock).mockReturnValue(rotatedBitmap)
+
+    const label = new Label(50, 25)
+    const image = new Image(10, 20, { width: 1, height: 8, bytes: new Uint8Array([0xFF]) })
+    image.setRotation(180)
+    label.add(image)
+
+    const lines = await commandStrings(label)
+    expect(lines.some(l => l.startsWith("BITMAP"))).toBe(true)
+    expect(ImageUtils.rotateBWBitmap).toHaveBeenCalledWith(expect.anything(), 180)
+})
+
+test("Image.commandForLanguage rotates bitmap for rotation 270", async () => {
+    ;(ImageUtils.rotateBWBitmap as unknown as jest.Mock).mockReturnValue(rotatedBitmap)
+
+    const label = new Label(50, 25)
+    const image = new Image(10, 20, { width: 1, height: 8, bytes: new Uint8Array([0xFF]) })
+    image.setRotation(270)
+    label.add(image)
+
+    const lines = await commandStrings(label)
+    expect(lines.some(l => l.startsWith("BITMAP"))).toBe(true)
+    // 360 - 270 = 90 passed to rotateBWBitmap
+    expect(ImageUtils.rotateBWBitmap).toHaveBeenCalledWith(expect.anything(), 90)
 })

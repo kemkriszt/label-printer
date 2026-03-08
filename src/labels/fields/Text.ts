@@ -1,12 +1,12 @@
-import { Command, PrinterLanguage } from "@/commands"
-import LabelField from "./LabelField"
+import { Command, Point, PrinterLanguage } from "@/commands"
 import { PrintConfig } from "../Printable"
 import { dotToPoint } from "@/helpers/UnitUtils"
 import CommandGenerator from "@/commands/CommandGenerator"
 import { isWhitespace, isBreakAfterChar } from "@/helpers/StringUtils"
 import { NodeType, parse, HTMLElement, Node } from "node-html-parser"
 import { FontOption } from "../types"
-import { Rotation } from "@/commands/tspl"
+import RotatableLabelField from "./superClasses/RotatableLabelField"
+import { PositionedField } from "./superClasses/interfaces"
 
 export type TextFieldType = "singleline"|"multiline"
 type Context = {
@@ -25,26 +25,26 @@ const STRIKE_TAG = ["s", "del", "strike"]
 const PARAGRAPH_TAG = "p"
 const BREAK_TAG = "br"
 
+// TODO: The implementation of rotation can be simplified by integrating the RotatableContainer component
 /**
  * Presents a piece of text on the label
  */
-export default class Text extends LabelField {
+export default class Text extends RotatableLabelField implements PositionedField {
     private readonly content: string
     /**
      * X coordinate in dots
      */
-    private readonly x: number
+    private x: number
     /**
      * Y coordinate in dots
      */
-    private readonly y: number
+    private y: number
     /**
-     * If true, basic html elements will be interpretted, otherwise the raw string is printed out
+     * If true, basic html elements will be interpreted, otherwise the raw string is printed out
      */
     private readonly formatted: boolean
     private font: FontOption = {name: "default", size: 10}
     private type: TextFieldType = "singleline"
-    private rotation: Rotation = 0
     private context: Context|undefined = undefined
     private readonly lineSpacing = 1
 
@@ -90,6 +90,15 @@ export default class Text extends LabelField {
         this.formatted = formatted
     }
 
+    setPosition(position: Point): void {
+        this.x = position.x
+        this.y = position.y
+    }
+
+    getPosition(): Point {
+        return { x: this.x, y: this.y }
+    }
+
     /**
      * Sets the field to single line
      * @param width Max width of the text. Leave it undefined to allow the field to grow 
@@ -118,14 +127,6 @@ export default class Text extends LabelField {
      */
     setFont(font: FontOption) {
         this.font = font
-    }
-
-    /**
-     * Set the rotation of the text field. All text commands in this field will be rotated.
-     * For multiline text, lines advance perpendicular to the character direction.
-     */
-    setRotation(rotation: Rotation) {
-        this.rotation = rotation
     }
 
     // --- Rotation-aware position helpers ---

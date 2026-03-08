@@ -1,11 +1,13 @@
-import { Command, PrinterLanguage } from "@/commands";
+import { Command, Dimension, PrinterLanguage } from "@/commands";
 import Printable, { PrintConfig } from "./Printable";
 import { UnitSystem } from "@/commands";
+import LabelField from "./fields/superClasses/LabelField";
+import { Font, FontOption, FontStyle, IndexedFont, IndexedFontFamily, LabelOrientation, rotationForOrientation } from "./types";
 import { LabelDirection } from "@/commands/tspl";
-import LabelField from "./fields/LabelField";
-import { Font, FontOption, FontStyle, IndexedFont, IndexedFontFamily } from "./types";
 import CommandGenerator from "@/commands/CommandGenerator";
 import * as fontkit from "fontkit"
+import RotatableContainer from "./RotatableContainer";
+import { unitToDot } from "@/helpers/UnitUtils";
 
 const DEFAULT_FONT_WEIGHT = 400
 const DEFAULT_FONT_STYLE = "normal"
@@ -31,11 +33,12 @@ export default class Label extends Printable {
     private fonts: Record<string, IndexedFontFamily> = {}
     private dpi: number
     private density: number = 8
+    private orientation: LabelOrientation = "normal"
 
     /**
     * List of fields on the label
     */
-    private fields: LabelField[] = []
+    private container: RotatableContainer
     private fontCounter = 0
     private _textWidthCorrectionFactor: number = 0.935
 
@@ -71,6 +74,15 @@ export default class Label extends Printable {
         this._textWidthCorrectionFactor = factor
     }
 
+    /**
+     * Change the orientation the label is printed in. This will rotate all fields in the container
+     * @param orientation 
+     */
+    setOrientation(orientation: LabelOrientation) {
+        this.orientation = orientation
+        this.container.setRotation(rotationForOrientation(orientation))
+    }
+
     constructor(
         width: number, 
         height: number, 
@@ -84,12 +96,14 @@ export default class Label extends Printable {
         this.unitSystem = dimensionUnit
         this.dpi = dpi
         this.density = density
+
+        const widthInDots = unitToDot(width, dpi, dimensionUnit)
+        const heightInDots = unitToDot(height, dpi, dimensionUnit)
+        this.container = new RotatableContainer({ width: widthInDots, height: heightInDots })
     }
 
     async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {
-        const configuration = config ?? this.printConfig
-        const commandList = await Promise.all(this.fields.map(field => field.commandForLanguage(language, configuration)))
-        return this.commandGeneratorFor(language).commandGroup(commandList)
+        return await this.container.commandForLanguage(language, config)
     }
 
     /**
@@ -97,7 +111,7 @@ export default class Label extends Printable {
      * @param fields 
      */
     add(...fields: LabelField[]) {
-        this.fields.push(...fields)
+        this.container.add(...fields)
     }
 
     /**
@@ -179,11 +193,18 @@ export default class Label extends Printable {
                               mirror: boolean = false, 
                               gapOffset: number = 0, 
                               generator: CommandGenerator<any>) {
+        let finalDimations: Dimension
+        if(this.orientation == "normal" || this.orientation == "upside-down") {
+            finalDimations = { width: this.width, height: this.height }
+        } else {
+            finalDimations = { width: this.height, height: this.width }
+        }
+
         const commands = [
             this.fontUploadCommands(generator),
             generator.setUp(
-                this.width, 
-                this.height, 
+                finalDimations.width, 
+                finalDimations.height, 
                 gap, 
                 gapOffset, 
                 direction, 
@@ -219,12 +240,12 @@ export default class Label extends Printable {
         if (!family) return null
         
         const style = font.style ?? DEFAULT_FONT_STYLE
-        const weigth = font.weight ?? DEFAULT_FONT_WEIGHT
+        const weight = font.weight ?? DEFAULT_FONT_WEIGHT
 
         const fontKeys = Object.keys(family.fonts)
         const exactMatch = fontKeys.find(key => 
             family.fonts[key].style == style &&
-            family.fonts[key].weight == weigth
+            family.fonts[key].weight == weight
         )
 
         // If there is a font that matches exactly the requested one we return that
@@ -240,7 +261,7 @@ export default class Label extends Printable {
                 let selectedKey = ""
 
                 sameStyleKeys.forEach(key => {
-                    const diff = Math.abs(weigth - family.fonts[key].weight)
+                    const diff = Math.abs(weight - family.fonts[key].weight)
                     if(diff < weigthDiff) {
                         weigthDiff = diff
                         selectedKey = key

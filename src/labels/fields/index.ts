@@ -1,4 +1,4 @@
-export { default as LabelField } from "./LabelField"
+export { default as LabelField } from "./superClasses/LabelField"
 
 export { default as Line } from "./Line"
 export { default as Text } from "./Text"
