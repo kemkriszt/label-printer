@@ -112,3 +112,33 @@ test("TSPLPrinter.getStatus maps paused", async () => {
 
     expect(status).toBe("paused")
 })
+
+test("TSPLPrinter.getStatus returns other_error when readData returns null", async () => {
+    const device: any = {
+        opened: true,
+        openAndConfigure: jest.fn(),
+        writeData: jest.fn().mockResolvedValue(undefined),
+        readData: jest.fn().mockResolvedValue(null),
+    }
+
+    const printer = new TSPLPrinter(device)
+    const status = await printer.getStatus()
+    expect(status).toBe("other_error")
+})
+
+test("TSPLPrinter.feedLabel creates and writes FORMFEED command", async () => {
+    const { TSPLRawCommand } = require("@/commands/tspl")
+    ;(TSPLRawCommand as jest.Mock).mockClear()
+
+    const device: any = {
+        opened: true,
+        openAndConfigure: jest.fn(),
+        writeString: jest.fn().mockResolvedValue(undefined),
+        writeData: jest.fn().mockResolvedValue(undefined),
+    }
+
+    const printer = new TSPLPrinter(device)
+    await printer.feedLabel()
+
+    expect(TSPLRawCommand).toHaveBeenCalledWith("FORMFEED")
+})
