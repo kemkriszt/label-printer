@@ -39,7 +39,7 @@ export default class RotatableContainer extends RotatableLabelField {
             
             rotatableField.setRotation((originalRotation + this.rotation) % 360 as Rotation)
         }
-        if(field.hasOwnProperty("x") && field.hasOwnProperty("y")) {
+        if(typeof (field as any).getPosition === "function" && typeof (field as any).setPosition === "function") {
             const positionedField = field as unknown as PositionedField
             originalPosition = positionedField.getPosition()
             positionedField.setPosition(this.adjustPosition(originalPosition))
