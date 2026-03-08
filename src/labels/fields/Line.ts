@@ -1,5 +1,5 @@
 import { Command, Point, PrinterLanguage } from "@/commands";
-import LabelField from "./LabelField";
+import LabelField from "./superClasses/LabelField";
 
 /**
  * Draws a line to the screen

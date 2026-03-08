@@ -1,21 +1,20 @@
-import { Command, PrinterLanguage } from "@/commands";
+import { Command, Point, PrinterLanguage } from "@/commands";
 import { PrintConfig } from "../Printable";
-import LabelField from "./LabelField";
 import ImageUtils, { BitmapLike } from "@/helpers/ImageUtils";
-import { Rotation } from "@/commands/tspl";
+import RotatableLabelField from "./superClasses/RotatableLabelField";
+import { PositionedField } from "./superClasses/interfaces";
 
-export default class Image extends LabelField {
+export default class Image extends RotatableLabelField implements PositionedField {
     /**
      * X coordinate in dots
      */
-    private readonly x: number
+    private x: number
     /**
      * Y coordinate in dots
      */
-    private readonly y: number
+    private y: number
 
     private readonly image: BitmapLike
-    private rotation: Rotation = 0
 
     constructor(x: number, y: number, image: BitmapLike) {
         super()
@@ -24,8 +23,13 @@ export default class Image extends LabelField {
         this.image = image
     }
 
-    setRotation(rotation: Rotation) {
-        this.rotation = rotation
+    setPosition(position: Point): void {
+        this.x = position.x
+        this.y = position.y
+    }
+
+    getPosition(): Point {
+        return { x: this.x, y: this.y }
     }
 
     async commandForLanguage(language: PrinterLanguage, _config?: PrintConfig | undefined): Promise<Command> {

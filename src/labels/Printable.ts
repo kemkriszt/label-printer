@@ -26,7 +26,7 @@ export default abstract class Printable {
     /**
      * Generates printable command for the given printer. Can be used to obtain a command for fields supported by the package then customizing it before printing
      * @param printer Printer to generate the command. Important because the command is printer language specific
-     * @returns A promise for a command. Most commands are syncronouse but some may require to access async resources
+     * @returns A promise for a command. Most commands are synchronous but some may require to access async resources
      */
     async commandForPrinter(printer: Printer, config?: PrintConfig): Promise<Command> {
         return await this.commandForLanguage(printer.language, config)

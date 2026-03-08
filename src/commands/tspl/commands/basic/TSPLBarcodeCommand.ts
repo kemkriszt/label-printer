@@ -1,4 +1,5 @@
-import { Alignment, BarcodeHumanReable, BarcodeType, Rotation, alignmentToNumber } from "../../types";
+import { Alignment, BarcodeHumanReable, BarcodeType, alignmentToNumber } from "@/commands/tspl";
+import { Rotation } from "@/commands";
 import TSPLVisualCommand from "../TSPLVisualCommand";
 
 export default class TSPLBarcodeCommand extends TSPLVisualCommand {

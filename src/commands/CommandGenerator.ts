@@ -1,7 +1,8 @@
 import { Point, UnitSystem } from "./index"
 import Command from "./Command";
 import CommandGroup from "./CommandGroup";
-import { Alignment, BarcodeHumanReable, BarcodeType, GraphicMode, LabelDirection, Rotation } from "./tspl";
+import { Alignment, BarcodeHumanReable, BarcodeType, GraphicMode, LabelDirection } from "./tspl";
+import { Rotation } from "./types";
 import { BitmapLike } from "@/helpers/ImageUtils";
 
 /**

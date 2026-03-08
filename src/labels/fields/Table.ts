@@ -1,6 +1,6 @@
 import { Command, PrinterLanguage } from "@/commands";
 import { isWhitespace } from "@/helpers/StringUtils";
-import LabelField from "./LabelField";
+import LabelField from "./superClasses/LabelField";
 import Line from "./Line";
 import Text from "./Text";
 import { PrintConfig } from "../Printable";

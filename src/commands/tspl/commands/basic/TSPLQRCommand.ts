@@ -1,4 +1,5 @@
-import { ECCLevel, AutoManual, Rotation, QRModel } from "../../types";
+import { ECCLevel, AutoManual, QRModel } from "@/commands/tspl";
+import { Rotation } from "@/commands";
 import TSPLVisualCommand from "../TSPLVisualCommand";
 
 /**

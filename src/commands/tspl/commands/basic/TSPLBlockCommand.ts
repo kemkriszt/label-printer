@@ -1,4 +1,5 @@
-import { Alignment, Rotation } from "../../types";
+import { Alignment } from "@/commands/tspl";
+import { Rotation } from "@/commands";
 import TSPLTextCommand from "./TSPLTextCommand";
 
 export default class TSPLBlockCommand extends TSPLTextCommand {

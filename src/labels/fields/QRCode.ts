@@ -1,14 +1,13 @@
-import { Command, PrinterLanguage } from "@/commands";
+import { Command, Point, PrinterLanguage } from "@/commands";
 import { PrintConfig } from "../Printable";
-import LabelField from "./LabelField";
-import { Rotation } from "@/commands/tspl";
+import RotatableLabelField from "./superClasses/RotatableLabelField";
+import { PositionedField } from "./superClasses/interfaces";
 
-export default class QRCode extends LabelField {
+export default class QRCode extends RotatableLabelField implements PositionedField {
     private readonly content: string
-    private readonly x: number
-    private readonly y: number
+    private x: number
+    private y: number
     private readonly width: number
-    private rotation: Rotation = 0
 
     constructor(content: string, x: number, y: number, width: number) {
         super()
@@ -18,8 +17,13 @@ export default class QRCode extends LabelField {
         this.width = width
     }
 
-    setRotation(rotation: Rotation) {
-        this.rotation = rotation
+    setPosition(position: Point): void {
+        this.x = position.x
+        this.y = position.y
+    }
+
+    getPosition(): Point {
+        return { x: this.x, y: this.y }
     }
 
     async commandForLanguage(language: PrinterLanguage, config?: PrintConfig | undefined): Promise<Command> {

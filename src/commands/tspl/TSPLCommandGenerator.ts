@@ -3,7 +3,8 @@ import { Point, UnitSystem } from "..";
 import CommandGenerator from "../CommandGenerator";
 import TSPLCommand from "./TSPLCommand";
 import { TSPLBitmapCommand, TSPLCLSCommand, TSPLCommandGroup, TSPLDensityCommand, TSPLDiagonal, TSPLDirectionCommand, TSPLDisplay, TSPLDownload, TSPLGapCommand, TSPLPrintCommand, TSPLQRCommand, TSPLRawCommand, TSPLSizeCommand, TSPLTextCommand } from "./commands";
-import { Alignment, BarcodeHumanReable, BarcodeType, GraphicMode, LabelDirection, Rotation } from "./types";
+import { Alignment, BarcodeHumanReable, BarcodeType, GraphicMode, LabelDirection } from "./types";
+import { Rotation } from "@/commands";
 import TSPLBarcodeCommand from "./commands/basic/TSPLBarcodeCommand";
 import { QRLengthMapping } from "@/helpers/QRCodeUtils";
 

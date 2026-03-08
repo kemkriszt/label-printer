@@ -19,7 +19,7 @@ export default async (): Promise<labels.Label> => {
     const fontItalic = fs.readFileSync(__dirname+"/../Roboto-Italic.ttf").buffer
     const fontBoldItalic = fs.readFileSync(__dirname+"/../Roboto-BoldItalic.ttf").buffer
 
-    const label = new labels.Label(50, 25)
+    const label = new labels.Label(30, 30)
 
     await label.registerFont({name: fontName, data: fontRegular, weight: 400, style: "normal"})
     await label.registerFont({name: fontName, data: fontBold, weight: 700, style: "normal"})
@@ -39,6 +39,7 @@ export default async (): Promise<labels.Label> => {
     text.setMultiLine(textWidth)
 
     label.add(text, line, image)
+    label.setOrientation("right")
 
     return label
 }

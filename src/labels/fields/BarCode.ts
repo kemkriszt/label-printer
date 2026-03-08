@@ -1,16 +1,16 @@
-import { Command, PrinterLanguage } from "@/commands";
+import { Command, Point, PrinterLanguage } from "@/commands";
 import { PrintConfig } from "../Printable";
-import LabelField from "./LabelField"
-import { Alignment, BarcodeHumanReable, BarcodeType, Rotation } from "@/commands/tspl";
+import { Alignment, BarcodeHumanReable, BarcodeType } from "@/commands/tspl";
+import RotatableLabelField from "./superClasses/RotatableLabelField";
+import { PositionedField } from "./superClasses/interfaces";
 
-export default class BarCode extends LabelField {
+export default class BarCode extends RotatableLabelField implements PositionedField{
     private readonly content: string
-    private readonly x: number
-    private readonly y: number
+    private x: number
+    private y: number
     private readonly type: BarcodeType
     private readonly height: number
     private readonly barWidth: number
-    private rotation: Rotation
     private humanReadable: BarcodeHumanReable
     private readonly alignment: Alignment
 
@@ -31,17 +31,21 @@ export default class BarCode extends LabelField {
         this.type = type
         this.height = height
         this.barWidth = barWidth
-        this.rotation = 0
         this.humanReadable = "none"
         this.alignment = "left"
     }
 
-    setRotation(rotation: Rotation) {
-        this.rotation = rotation
-    }
-
     setHumanReadable(humanReadable: BarcodeHumanReable) {
         this.humanReadable = humanReadable
+    }
+
+    setPosition(position: Point): void {
+        this.x = position.x
+        this.y = position.y
+    }
+
+    getPosition(): Point {
+        return { x: this.x, y: this.y }
     }
 
     async commandForLanguage(language: PrinterLanguage, _config?: PrintConfig | undefined): Promise<Command> {

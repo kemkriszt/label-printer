@@ -47,3 +47,35 @@ export function pointsToDots(points: number, dpi: number): number {
     const dots = points * dpi / pointsPerInch;
     return dots;
 }
+
+/**
+ * Converts inches to dots
+ * @param inches
+ * @param dpi
+ * @param round
+ */
+export function inToDot(inches: number, dpi: number, round: boolean = false): number {
+    const res = inches * dpi
+    if(round) return Math.round(res)
+    else return res
+}
+
+/**
+ * Converts millimeters to dots
+ * @param mm 
+ * @param dpi 
+ * @param round 
+ * @returns 
+ */
+export function mmToDot(mm: number, dpi: number, round: boolean = false): number {
+    const res = (mm / 25.4) * dpi
+    if(round) return Math.round(res)
+    else return res
+}
+
+/**
+ * Converts a value in the label's unit system to dots
+ */
+export function unitToDot(value: number, dpi: number, unitSystem: UnitSystem, round: boolean = false): number {
+    return unitSystem === "imperial" ? inToDot(value, dpi, round) : mmToDot(value, dpi, round)
+}
