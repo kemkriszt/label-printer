@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.12.0
+
+### Minor Changes
+
+- e68c4e2: Field orientation
+
 ## 0.11.0
 
 ### Minor Changes
