@@ -30,6 +30,8 @@ const BREAK_TAG = "br"
  * Presents a piece of text on the label
  */
 export default class Text extends RotatableLabelField implements PositionedField {
+    private static MIN_WORD_BREAK_CHARS = 2
+
     private readonly content: string
     /**
      * X coordinate in dots
@@ -58,29 +60,6 @@ export default class Text extends RotatableLabelField implements PositionedField
      * Height of the text box, if empty and the type is multiline, the box can grow infinitely
      */
     private height: number|undefined
-
-    private endsWithBreak(node: Node): boolean {
-        if(node.nodeType == NodeType.TEXT_NODE) {
-            return node.innerText.trim() == ""
-        }
-
-        const elementNode = node as HTMLElement
-        if(elementNode.rawTagName == BREAK_TAG) return true
-
-        const children = elementNode.childNodes
-        for(let i = children.length - 1; i >= 0; i--) {
-            const child = children[i]
-            if(child.nodeType == NodeType.TEXT_NODE) {
-                if(child.innerText.trim() == "") continue
-                return false
-            }
-
-            if(this.endsWithBreak(child)) return true
-            return false
-        }
-
-        return false
-    }
 
     constructor(content: string, x: number, y: number, formatted: boolean = true) {
         super()
@@ -127,6 +106,51 @@ export default class Text extends RotatableLabelField implements PositionedField
      */
     setFont(font: FontOption) {
         this.font = font
+    }
+
+    /**
+     * Generate the commands. Main entry point
+     * @param language 
+     * @param config 
+     * @returns 
+     */
+    async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {
+        this.context = {
+            config,
+            language,
+            generator: this.commandGeneratorFor(language)
+        }
+
+        let command: Command
+        if(this.formatted) {
+            command = this.generateFormattedText()
+        } else {
+            command = this.generatePlainText()
+        }
+        this.context = undefined
+  
+        return command
+    }
+
+    /**
+     * Generate commands for formatted text
+     * @returns 
+     */
+    private generateFormattedText(): Command {
+        if(!this.context) throw "context-not-set"
+        
+        const rootNode = parse(this.content)
+        const { command } = this.generateFormattedRecursive(this.x, this.y, rootNode, this.font, [])
+        return command
+    }
+
+    /**
+     * Generate commands for plain text
+     * @returns 
+     */
+    private generatePlainText(): Command {
+        const { command } = this.generatePlainTextCore(this.content, this.x, this.y, this.font)
+        return command
     }
 
     // --- Rotation-aware position helpers ---
@@ -181,44 +205,37 @@ export default class Text extends RotatableLabelField implements PositionedField
         }
     }
 
-    async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {
-        this.context = {
-            config,
-            language,
-            generator: this.commandGeneratorFor(language)
-        }
-
-        let command: Command
-        if(this.formatted) {
-            command = this.generateFormattedText()
-        } else {
-            command = this.generatePlainText()
-        }
-        this.context = undefined
-  
-        return command
-    }
-    
-    /**
-     * Generate commands for formatted text
-     * @returns 
-     */
-    private generateFormattedText(): Command {
-        if(!this.context) throw "context-not-set"
-        
-        const rootNode = parse(this.content)
-        const { command } = this.generateFormattedRecursive(this.x, this.y, rootNode, this.font, [])
-        return command
-    }
+    // --- Text helpers ---
 
     /**
-     * Generate commands for plain text
+     * Check if a node ends in a brake tag or empty 
+     * @param node 
      * @returns 
      */
-    private generatePlainText(): Command {
-        const { command } = this.generatePlainTextCore(this.content, this.x, this.y, this.font)
-        return command
+    private endsWithBreak(node: Node): boolean {
+        if(node.nodeType == NodeType.TEXT_NODE) {
+            return node.innerText.trim() == ""
+        }
+
+        const elementNode = node as HTMLElement
+        if(elementNode.rawTagName == BREAK_TAG) return true
+
+        const children = elementNode.childNodes
+        for(let i = children.length - 1; i >= 0; i--) {
+            const child = children[i]
+            if(child.nodeType == NodeType.TEXT_NODE) {
+                if(child.innerText.trim() == "") continue
+                return false
+            }
+
+            if(this.endsWithBreak(child)) return true
+            return false
+        }
+
+        return false
     }
+
+    // --- Command generation ---
 
     /**
      * Iterats the nodes in a html text and generates text commands for it
@@ -301,235 +318,211 @@ export default class Text extends RotatableLabelField implements PositionedField
         const textWidhtFunction = this.textWidthFunction
         let fullWidth = textWidhtFunction(content, font)
 
-        if(this.width) {
-            const initialPadding = this.charOffset(initialX, initialY)
-            // Because we may start from further in the row, the first rows width may be smaller
-            let rowWidth = this.width - initialPadding
-            // In theory rowWidth should not be negative, but for some reason it happens.. as a quick work around we make sure it is not negative
-            if(rowWidth <= 0) {
-                rowWidth = this.width
-                const linePos = this.advanceLine(initialX, initialY, font.size + this.lineSpacing)
-                initialX = linePos.x
-                initialY = linePos.y
-            }
-
-            // Make sure we don't print spaces at the beginning of a row
-            if(this.atLineStart(initialX, initialY)) {
-                content = content.trimStart()
-                fullWidth = textWidhtFunction(content, font)
-            }
-
-            // We may not start from the beginning of the textbox so we have to offset
-            // by our current position
-            if(fullWidth <= rowWidth) {
-                const end = this.advanceChar(initialX, initialY, fullWidth)
-                return {
-                    x: end.x,
-                    y: end.y,
-                    command: this.textCommand(content, initialX, initialY, font, features)
-                }
-            } else {
-                const commands: Command[] = []
-                
-                let x = initialX
-                let y = initialY
-                let remainingContent = content
-                let remainingWidth = fullWidth
-                let currentHeight = 0
-
-                let finalX = x
-                let finalY = y
-
-                do {
-                    // This will be the last row of the text.
-                    if(remainingWidth < rowWidth) {
-                        const end = this.advanceChar(x, y, remainingWidth)
-                        finalX = end.x
-                        finalY = end.y
-
-                        commands.push(this.textCommand(remainingContent,  x, y, font, features))
-                        remainingContent = ""
-                    } else {
-                        // Binary search for the last character index that fits within the current
-                        // row width. This correctly handles proportional fonts where characters
-                        // have different widths, unlike a simple character-count estimate.
-                        let lo = 0, hi = remainingContent.length - 1
-                        let rowEndIndex = -1
-                        while (lo <= hi) {
-                            const mid = Math.floor((lo + hi) / 2)
-                            if (textWidhtFunction(remainingContent.substring(0, mid + 1), font) <= rowWidth) {
-                                rowEndIndex = mid
-                                lo = mid + 1
-                            } else {
-                                hi = mid - 1
-                            }
-                        }
-                        let originalRowEndIndex = rowEndIndex
-
-                        // From the second row, all rows are full width
-                        rowWidth = this.width
-
-                        // Even the first character doesn't fit — advance to the next line
-                        if (rowEndIndex < 0) {
-                            const linePos = this.advanceLine(x, y, font.size + this.lineSpacing)
-                            x = linePos.x
-                            y = linePos.y
-                            continue
-                        }
-
-                        // Walk backward from rowEndIndex to find the end of the last complete word
-                        while(
-                            ! (
-                                (
-                                    !isWhitespace(remainingContent.charAt(rowEndIndex)) &&
-                                    (
-                                        rowEndIndex == remainingContent.length - 1 ||
-                                        isWhitespace(remainingContent.charAt(rowEndIndex + 1))
-                                    )
-                                ) ||
-                                isBreakAfterChar(remainingContent.charAt(rowEndIndex))
-                            ) && rowEndIndex > 0
-                        ) { rowEndIndex -- }
-
-                        let nextRowStartIndex = rowEndIndex + 1
-                        const foundWordBoundary =
-                            (!isWhitespace(remainingContent.charAt(rowEndIndex)) &&
-                            (rowEndIndex == remainingContent.length - 1 || isWhitespace(remainingContent.charAt(rowEndIndex + 1)))) ||
-                            isBreakAfterChar(remainingContent.charAt(rowEndIndex))
-
-                        const MIN_WORD_BREAK_CHARS = 2
-
-                        if (!foundWordBoundary) {
-                            // No word boundary at all — mid-word break at binary-search result
-                            rowEndIndex = originalRowEndIndex
-                            nextRowStartIndex = originalRowEndIndex + 1
-
-                            // Ensure at least MIN_WORD_BREAK_CHARS go to next line
-                            let wordEnd = originalRowEndIndex + 1
-                            while (wordEnd < remainingContent.length && !isWhitespace(remainingContent.charAt(wordEnd))) {
-                                wordEnd++
-                            }
-                            const charsOnNext = wordEnd - originalRowEndIndex - 1
-                            if (charsOnNext > 0 && charsOnNext < MIN_WORD_BREAK_CHARS) {
-                                const adjusted = originalRowEndIndex - (MIN_WORD_BREAK_CHARS - charsOnNext)
-                                if (adjusted >= 0) {
-                                    rowEndIndex = adjusted
-                                    nextRowStartIndex = adjusted + 1
-                                }
-                            }
-                        } else if (originalRowEndIndex > rowEndIndex) {
-                            // Word boundary found but binary search could fit more characters.
-                            // First, check if the FULL next word fits within a relaxed limit
-                            // based on the correction factor (compensates for fontkit overestimation).
-                            let wordStart = rowEndIndex + 1
-                            while (wordStart <= originalRowEndIndex && isWhitespace(remainingContent.charAt(wordStart))) {
-                                wordStart++
-                            }
-
-                            // Find the end of the full word
-                            let fullWordEnd = wordStart
-                            while (fullWordEnd < remainingContent.length && !isWhitespace(remainingContent.charAt(fullWordEnd))) {
-                                fullWordEnd++
-                            }
-
-                            // Check if the line including the full word fits within rowWidth.
-                            // The global correction factor (applied in textWidth) already reduces
-                            // measurements, so we just check against the actual line width here.
-                            const lineWithFullWord = textWidhtFunction(remainingContent.substring(0, fullWordEnd), font)
-                            if (lineWithFullWord <= rowWidth) {
-                                // Full word fits within tolerance — include it
-                                rowEndIndex = fullWordEnd - 1
-                                nextRowStartIndex = fullWordEnd
-                            } else {
-                                // Full word doesn't fit even with tolerance — try mid-word break.
-                                // Use a fresh binary search within the word to find the optimal
-                                // break point (avoids issues when originalRowEndIndex lands on whitespace).
-                                let lo2 = wordStart, hi2 = fullWordEnd - 1
-                                let midBreak = -1
-                                while (lo2 <= hi2) {
-                                    const mid2 = Math.floor((lo2 + hi2) / 2)
-                                    if (textWidhtFunction(remainingContent.substring(0, mid2 + 1), font) <= rowWidth) {
-                                        midBreak = mid2
-                                        lo2 = mid2 + 1
-                                    } else {
-                                        hi2 = mid2 - 1
-                                    }
-                                }
-
-                                let usedMidWordBreak = false
-                                if (midBreak >= wordStart) {
-                                    let charsOnLine = midBreak - wordStart + 1
-                                    let charsOnNext = fullWordEnd - midBreak - 1
-
-                                    // Ensure at least MIN_WORD_BREAK_CHARS on next line
-                                    if (charsOnNext > 0 && charsOnNext < MIN_WORD_BREAK_CHARS) {
-                                        midBreak -= (MIN_WORD_BREAK_CHARS - charsOnNext)
-                                        charsOnLine = midBreak - wordStart + 1
-                                    }
-
-                                    if (charsOnLine >= MIN_WORD_BREAK_CHARS) {
-                                        rowEndIndex = midBreak
-                                        nextRowStartIndex = midBreak + 1
-                                        usedMidWordBreak = true
-                                    }
-                                }
-
-                                if (!usedMidWordBreak) {
-                                    // Can't mid-word break — fall back to word boundary
-                                    nextRowStartIndex = rowEndIndex + 1
-                                    while(
-                                        isWhitespace(remainingContent.charAt(nextRowStartIndex)) &&
-                                        nextRowStartIndex < remainingContent.length
-                                    ) { nextRowStartIndex ++ }
-                                }
-                            }
-                        } else {
-                            // Skip leading whitespace on the next row
-                            while(
-                                isWhitespace(remainingContent.charAt(nextRowStartIndex)) &&
-                                nextRowStartIndex < remainingContent.length
-                            ) { nextRowStartIndex ++ }
-                        }
-
-                        const thisRow = remainingContent.substring(0, rowEndIndex + 1)
-                        commands.push(this.textCommand(thisRow, x, y, font, features))
-
-                        if(nextRowStartIndex == remainingContent.length) {
-                            const end = this.advanceChar(x, y, remainingWidth)
-                            finalX = end.x
-                            finalY = end.y
-                        }
-
-                        // Move cursor to the start of the next line
-                        const linePos = this.advanceLine(x, y, font.size + this.lineSpacing)
-                        x = linePos.x
-                        y = linePos.y
-                        currentHeight = this.lineOffset(x, y)
-
-                        remainingContent = remainingContent.substring(nextRowStartIndex)
-                        remainingWidth = textWidhtFunction(remainingContent, font)
-                    }
-                } while(
-                    // We don't have a height constraint or we are still within bounds 
-                    // and there is still content 
-                    // and we are supporting multiline
-                    (this.height == undefined || (currentHeight + font.size) <= this.height) &&
-                    (remainingContent != "") &&
-                    this.type == "multiline"
-                )
-                return {
-                    x: finalX,
-                    y: finalY,
-                    command: this.context!.generator.commandGroup(commands)
-                }
-            }
-        } else {
+        // If there is no width constraint, just print the text and return the end position
+        if(!this.width) {
             const end = this.advanceChar(initialX, initialY, fullWidth)
             return {
                 x: end.x,
                 y: end.y,
                 command: this.textCommand(content, initialX, initialY, font, features)
             }
+        }
+
+        const initialPadding = this.charOffset(initialX, initialY)
+        // Because we may start from further in the row, the first rows width may be smaller
+        let rowWidth = this.width - initialPadding
+        // In theory rowWidth should not be negative, but for some reason it happens.. as a quick work around we make sure it is not negative
+        if(rowWidth <= 0) {
+            rowWidth = this.width
+            const linePos = this.advanceLine(initialX, initialY, font.size + this.lineSpacing)
+            initialX = linePos.x
+            initialY = linePos.y
+        }
+
+        // Make sure we don't print spaces at the beginning of a row
+        if(this.atLineStart(initialX, initialY)) {
+            content = content.trimStart()
+            fullWidth = textWidhtFunction(content, font)
+        }
+
+        // We may not start from the beginning of the textbox so we have to offset
+        // by our current position
+        if(fullWidth <= rowWidth) {
+            const end = this.advanceChar(initialX, initialY, fullWidth)
+            return {
+                x: end.x,
+                y: end.y,
+                command: this.textCommand(content, initialX, initialY, font, features)
+            }
+        }
+
+        // Edge cases handled, ready to generate multi-line output if needed
+
+        const commands: Command[] = []
+        
+        let x = initialX
+        let y = initialY
+        let remainingContent = content
+        let remainingWidth = fullWidth
+        let currentHeight = 0
+
+        let finalX = x
+        let finalY = y
+
+        do {
+            // This will be the last row of the text.
+            if(remainingWidth < rowWidth) {
+                const end = this.advanceChar(x, y, remainingWidth)
+                finalX = end.x
+                finalY = end.y
+
+                commands.push(this.textCommand(remainingContent,  x, y, font, features))
+                remainingContent = ""
+            } else {
+                let rowEndIndex = this.searchForFittingText(remainingContent, font, rowWidth)
+                let originalRowEndIndex = rowEndIndex
+
+                // From the second row, all rows are full width
+                rowWidth = this.width
+
+                // Even the first character doesn't fit — advance to the next line
+                if (rowEndIndex < 0) {
+                    const linePos = this.advanceLine(x, y, font.size + this.lineSpacing)
+                    x = linePos.x
+                    y = linePos.y
+                    continue
+                }
+
+                // Walk backward from rowEndIndex to find the end of the last complete word
+                while(rowEndIndex > 0 && !this.isAtWordBoundary(rowEndIndex, remainingContent)) 
+                { rowEndIndex -- }
+
+                let nextRowStartIndex = rowEndIndex + 1
+                const foundWordBoundary = this.isAtWordBoundary(rowEndIndex, remainingContent)
+
+                if (!foundWordBoundary) {
+                    // No word boundary at all — mid-word break at binary-search result
+                    rowEndIndex = originalRowEndIndex
+                    nextRowStartIndex = originalRowEndIndex + 1
+
+                    // Ensure at least MIN_WORD_BREAK_CHARS go to next line
+                    let wordEnd = originalRowEndIndex + 1
+                    while (wordEnd < remainingContent.length && !isWhitespace(remainingContent.charAt(wordEnd))) {
+                        wordEnd++
+                    }
+                    const charsOnNext = wordEnd - originalRowEndIndex - 1
+                    if (charsOnNext > 0 && charsOnNext < Text.MIN_WORD_BREAK_CHARS) {
+                        const adjusted = originalRowEndIndex - (Text.MIN_WORD_BREAK_CHARS - charsOnNext)
+                        if (adjusted >= 0) {
+                            rowEndIndex = adjusted
+                            nextRowStartIndex = adjusted + 1
+                        }
+                    }
+                } else if (originalRowEndIndex > rowEndIndex) {
+                    // Word boundary found but binary search could fit more characters.
+                    // First, check if the FULL next word fits within a relaxed limit
+                    // based on the correction factor (compensates for fontkit overestimation).
+                    let wordStart = rowEndIndex + 1
+                    while (wordStart <= originalRowEndIndex && isWhitespace(remainingContent.charAt(wordStart))) {
+                        wordStart++
+                    }
+
+                    // Find the end of the full word
+                    let fullWordEnd = wordStart
+                    while (fullWordEnd < remainingContent.length && !isWhitespace(remainingContent.charAt(fullWordEnd))) {
+                        fullWordEnd++
+                    }
+
+                    // Check if the line including the full word fits within rowWidth.
+                    // The global correction factor (applied in textWidth) already reduces
+                    // measurements, so we just check against the actual line width here.
+                    const lineWithFullWord = textWidhtFunction(remainingContent.substring(0, fullWordEnd), font)
+                    if (lineWithFullWord <= rowWidth) {
+                        // Full word fits within tolerance — include it
+                        rowEndIndex = fullWordEnd - 1
+                        nextRowStartIndex = fullWordEnd
+                    } else {
+                        // Full word doesn't fit even with tolerance — try mid-word break.
+                        // Use a fresh binary search within the word to find the optimal
+                        // break point (avoids issues when originalRowEndIndex lands on whitespace).
+                        let lo2 = wordStart, hi2 = fullWordEnd - 1
+                        let midBreak = -1
+                        while (lo2 <= hi2) {
+                            const mid2 = Math.floor((lo2 + hi2) / 2)
+                            if (textWidhtFunction(remainingContent.substring(0, mid2 + 1), font) <= rowWidth) {
+                                midBreak = mid2
+                                lo2 = mid2 + 1
+                            } else {
+                                hi2 = mid2 - 1
+                            }
+                        }
+
+                        let usedMidWordBreak = false
+                        if (midBreak >= wordStart) {
+                            let charsOnLine = midBreak - wordStart + 1
+                            let charsOnNext = fullWordEnd - midBreak - 1
+
+                            // Ensure at least MIN_WORD_BREAK_CHARS on next line
+                            if (charsOnNext > 0 && charsOnNext < MIN_WORD_BREAK_CHARS) {
+                                midBreak -= (MIN_WORD_BREAK_CHARS - charsOnNext)
+                                charsOnLine = midBreak - wordStart + 1
+                            }
+
+                            if (charsOnLine >= MIN_WORD_BREAK_CHARS) {
+                                rowEndIndex = midBreak
+                                nextRowStartIndex = midBreak + 1
+                                usedMidWordBreak = true
+                            }
+                        }
+
+                        if (!usedMidWordBreak) {
+                            // Can't mid-word break — fall back to word boundary
+                            nextRowStartIndex = rowEndIndex + 1
+                            while(
+                                isWhitespace(remainingContent.charAt(nextRowStartIndex)) &&
+                                nextRowStartIndex < remainingContent.length
+                            ) { nextRowStartIndex ++ }
+                        }
+                    }
+                } else {
+                    // Skip leading whitespace on the next row
+                    while(
+                        isWhitespace(remainingContent.charAt(nextRowStartIndex)) &&
+                        nextRowStartIndex < remainingContent.length
+                    ) { nextRowStartIndex ++ }
+                }
+
+                const thisRow = remainingContent.substring(0, rowEndIndex + 1)
+                commands.push(this.textCommand(thisRow, x, y, font, features))
+
+                if(nextRowStartIndex == remainingContent.length) {
+                    const end = this.advanceChar(x, y, remainingWidth)
+                    finalX = end.x
+                    finalY = end.y
+                }
+
+                // Move cursor to the start of the next line
+                const linePos = this.advanceLine(x, y, font.size + this.lineSpacing)
+                x = linePos.x
+                y = linePos.y
+                currentHeight = this.lineOffset(x, y)
+
+                remainingContent = remainingContent.substring(nextRowStartIndex)
+                remainingWidth = textWidhtFunction(remainingContent, font)
+            }
+        } while(
+            // We don't have a height constraint or we are still within bounds 
+            // and there is still content 
+            // and we are supporting multiline
+            (this.height == undefined || (currentHeight + font.size) <= this.height) &&
+            (remainingContent != "") &&
+            this.type == "multiline"
+        )
+
+        return {
+            x: finalX,
+            y: finalY,
+            command: this.context!.generator.commandGroup(commands)
         }
     }
 
@@ -615,5 +608,46 @@ export default class Text extends RotatableLabelField implements PositionedField
     private defaultTextWidth(text: string, font: FontOption): number {
         const dpi = this.context?.config?.dpi ?? 203
         return text.length * dotToPoint(font.size, dpi)
+    }
+
+    // ---- Text algorithm helper functions ----
+
+    /**
+     * Binary search for the last character index that fits within the current
+     * row width. This correctly handles proportional fonts where characters
+     * have different widths, unlike a simple character-count estimate.
+     * @returns 
+     */
+    private searchForFittingText(remainingContent: string, font: FontOption, rowWidth: number): number {
+        const textWidhtFunction = this.textWidthFunction
+        let lo = 0, hi = remainingContent.length - 1
+        let rowEndIndex = -1
+        while (lo <= hi) {
+            const mid = Math.floor((lo + hi) / 2)
+            if (textWidhtFunction(remainingContent.substring(0, mid + 1), font) <= rowWidth) {
+                rowEndIndex = mid
+                lo = mid + 1
+            } else {
+                hi = mid - 1
+            }
+        }
+
+        return rowEndIndex
+    }
+
+    /**
+     * Check if the current point is a correct braking point, meaning it is either at the end of a word or at a break character.
+     * @param index 
+     * @returns 
+     */
+    private isAtWordBoundary(index: number, content: string): boolean {
+        const char = content.charAt(index);
+        const nextChar = content.charAt(index + 1);
+        const isLastChar = index === content.length - 1;
+
+        const isEndOfWord = !isWhitespace(char) && (isLastChar || isWhitespace(nextChar));
+        const isBreakPoint = isBreakAfterChar(char);
+
+        return isEndOfWord || isBreakPoint;
     }
 }
