@@ -59,7 +59,7 @@ export default class Label extends Printable {
                 }
             },
             getFontName: this.getFontName.bind(this)
-        } 
+        }
     }
 
     /**

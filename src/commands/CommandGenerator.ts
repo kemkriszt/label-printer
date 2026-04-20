@@ -22,6 +22,12 @@ export default interface CommandGenerator<T extends Command> {
      */
     display: () => T
     /**
+     * Normalize a font size from dots to the effective dots value the printer will actually use.
+     * Applied before layout so word wrap and line height match the rendered output.
+     * Languages that support fractional point sizes may omit this.
+     */
+    normalizeFontSizeInDots?: (sizeInDots: number, fontName: string, dpi: number) => number
+    /**
      * This should generate the needed commands to set up a label before printing
      */
     setUp: (width: number, height: number, gap: number, offset: number, direction: LabelDirection, mirror: boolean, unitSystem: UnitSystem, density: number) => T

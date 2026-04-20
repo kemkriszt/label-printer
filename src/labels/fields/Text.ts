@@ -140,7 +140,7 @@ export default class Text extends RotatableLabelField implements PositionedField
         if(!this.context) throw "context-not-set"
         
         const rootNode = parse(this.content)
-        const { command } = this.generateFormattedRecursive(this.x, this.y, rootNode, this.font, [])
+        const { command } = this.generateFormattedRecursive(this.x, this.y, rootNode, this.normalizedFont(this.font), [])
         return command
     }
 
@@ -149,7 +149,7 @@ export default class Text extends RotatableLabelField implements PositionedField
      * @returns 
      */
     private generatePlainText(): Command {
-        const { command } = this.generatePlainTextCore(this.content, this.x, this.y, this.font)
+        const { command } = this.generatePlainTextCore(this.content, this.x, this.y, this.normalizedFont(this.font))
         return command
     }
 
@@ -463,12 +463,12 @@ export default class Text extends RotatableLabelField implements PositionedField
                             let charsOnNext = fullWordEnd - midBreak - 1
 
                             // Ensure at least MIN_WORD_BREAK_CHARS on next line
-                            if (charsOnNext > 0 && charsOnNext < MIN_WORD_BREAK_CHARS) {
-                                midBreak -= (MIN_WORD_BREAK_CHARS - charsOnNext)
+                            if (charsOnNext > 0 && charsOnNext < Text.MIN_WORD_BREAK_CHARS) {
+                                midBreak -= (Text.MIN_WORD_BREAK_CHARS - charsOnNext)
                                 charsOnLine = midBreak - wordStart + 1
                             }
 
-                            if (charsOnLine >= MIN_WORD_BREAK_CHARS) {
+                            if (charsOnLine >= Text.MIN_WORD_BREAK_CHARS) {
                                 rowEndIndex = midBreak
                                 nextRowStartIndex = midBreak + 1
                                 usedMidWordBreak = true
@@ -590,6 +590,15 @@ export default class Text extends RotatableLabelField implements PositionedField
         } else {
             return this.context!.config?.getFontName(font)!
         }
+    }
+
+    private normalizedFont(font: FontOption): FontOption {
+        const normalizer = this.context?.generator?.normalizeFontSizeInDots
+        if (!normalizer) return font
+        const dpi = this.context?.config?.dpi ?? 203
+        const effectiveSize = normalizer(font.size, font.name, dpi)
+        if (effectiveSize === font.size) return font
+        return { ...font, size: effectiveSize }
     }
 
     private get textWidthFunction() {
