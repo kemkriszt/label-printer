@@ -1,7 +1,7 @@
 import { PrinterService } from "@/printers"
 import { Label } from "@/labels"
-import textExample from "./exampleCases/textExample";
-// import classicExample from "./exampleCases/classicExample"
+// import textExample from "./exampleCases/textExample";
+import classicExample from "./exampleCases/classicExample"
 // import tableExample from "./exampleCases/tableExample"
 // import svgExample from "./exampleCases/imageTypesExample"
 // import barcodeExample from "./exampleCases/barcodeExample"
@@ -15,14 +15,14 @@ function sleep(ms: number) {
 export default async () => {
     const displayOverPrint = true
     const monitorPrinter = false
-    // const printers = await PrinterService.getPrinters()
-    const printers = [await PrinterService.connectTSPL({ network: { host: "192.168.100.31", port: 9100 } })]
+    const printers = await PrinterService.getPrinters()
+    // const printers = [await PrinterService.connectTSPL({ network: { host: "192.168.100.31", port: 9100 } })]
 
     if(!monitorPrinter && printers.length > 0) {
         const printer = printers[0]!
 
-        const result = await textExample()
-        // const result = await classicExample()
+        // const result = await textExample()
+        const result = await classicExample()
         // const result = await tableExample()
         // const result = await barcodeExample()
         // const result = await densityExample(8)
