@@ -315,12 +315,11 @@ export default class Text extends RotatableLabelField implements PositionedField
     private generatePlainTextCore(content: string, initialX: number, initialY: number, font: FontOption, features: TextDecoration[] = []): {x: number, y: number, command: Command} {
         if(!this.context) throw "context-not-set"
 
-        const textWidhtFunction = this.textWidthFunction
-        let fullWidth = textWidhtFunction(content, font)
+        let currentTextFullWidth = this.textWidthFunction(content, font)
 
         // If there is no width constraint, just print the text and return the end position
         if(!this.width) {
-            const end = this.advanceChar(initialX, initialY, fullWidth)
+            const end = this.advanceChar(initialX, initialY, currentTextFullWidth)
             return {
                 x: end.x,
                 y: end.y,
@@ -330,10 +329,10 @@ export default class Text extends RotatableLabelField implements PositionedField
 
         const initialPadding = this.charOffset(initialX, initialY)
         // Because we may start from further in the row, the first rows width may be smaller
-        let rowWidth = this.width - initialPadding
+        let availableWidth = this.width - initialPadding
         // In theory rowWidth should not be negative, but for some reason it happens.. as a quick work around we make sure it is not negative
-        if(rowWidth <= 0) {
-            rowWidth = this.width
+        if(availableWidth <= 0) {
+            availableWidth = this.width
             const linePos = this.advanceLine(initialX, initialY, font.size + this.lineSpacing)
             initialX = linePos.x
             initialY = linePos.y
@@ -342,13 +341,13 @@ export default class Text extends RotatableLabelField implements PositionedField
         // Make sure we don't print spaces at the beginning of a row
         if(this.atLineStart(initialX, initialY)) {
             content = content.trimStart()
-            fullWidth = textWidhtFunction(content, font)
+            currentTextFullWidth = this.textWidthFunction(content, font)
         }
 
         // We may not start from the beginning of the textbox so we have to offset
         // by our current position
-        if(fullWidth <= rowWidth) {
-            const end = this.advanceChar(initialX, initialY, fullWidth)
+        if(currentTextFullWidth <= availableWidth) {
+            const end = this.advanceChar(initialX, initialY, currentTextFullWidth)
             return {
                 x: end.x,
                 y: end.y,
@@ -363,7 +362,7 @@ export default class Text extends RotatableLabelField implements PositionedField
         let x = initialX
         let y = initialY
         let remainingContent = content
-        let remainingWidth = fullWidth
+        let remainingContentWidth = currentTextFullWidth
         let currentHeight = 0
 
         let finalX = x
@@ -371,30 +370,28 @@ export default class Text extends RotatableLabelField implements PositionedField
 
         do {
             // This will be the last row of the text.
-            if(remainingWidth < rowWidth) {
-                const end = this.advanceChar(x, y, remainingWidth)
+            if(remainingContentWidth < availableWidth) {
+                const end = this.advanceChar(x, y, remainingContentWidth)
                 finalX = end.x
                 finalY = end.y
 
                 commands.push(this.textCommand(remainingContent,  x, y, font, features))
                 remainingContent = ""
             } else {
-                let rowEndIndex = this.searchForFittingText(remainingContent, font, rowWidth)
+                let rowEndIndex = this.searchForFittingText(remainingContent, font, availableWidth)
                 let originalRowEndIndex = rowEndIndex
-
-                // From the second row, all rows are full width
-                rowWidth = this.width
 
                 // Even the first character doesn't fit — advance to the next line
                 if (rowEndIndex < 0) {
                     const linePos = this.advanceLine(x, y, font.size + this.lineSpacing)
+                    availableWidth = this.width
                     x = linePos.x
                     y = linePos.y
                     continue
                 }
 
                 // Walk backward from rowEndIndex to find the end of the last complete word
-                while(rowEndIndex > 0 && !this.isAtWordBoundary(rowEndIndex, remainingContent)) 
+                while(rowEndIndex > 0 && !this.isAtWordBoundary(rowEndIndex, remainingContent))
                 { rowEndIndex -- }
 
                 let nextRowStartIndex = rowEndIndex + 1
@@ -433,11 +430,13 @@ export default class Text extends RotatableLabelField implements PositionedField
                         fullWordEnd++
                     }
 
+                    const nextWord = remainingContent.substring(wordStart, fullWordEnd)
+
                     // Check if the line including the full word fits within rowWidth.
                     // The global correction factor (applied in textWidth) already reduces
                     // measurements, so we just check against the actual line width here.
-                    const lineWithFullWord = textWidhtFunction(remainingContent.substring(0, fullWordEnd), font)
-                    if (lineWithFullWord <= rowWidth) {
+                    const lineWithFullWord = this.textWidthFunction(remainingContent.substring(0, fullWordEnd), font)
+                    if (lineWithFullWord <= availableWidth) {
                         // Full word fits within tolerance — include it
                         rowEndIndex = fullWordEnd - 1
                         nextRowStartIndex = fullWordEnd
@@ -449,7 +448,7 @@ export default class Text extends RotatableLabelField implements PositionedField
                         let midBreak = -1
                         while (lo2 <= hi2) {
                             const mid2 = Math.floor((lo2 + hi2) / 2)
-                            if (textWidhtFunction(remainingContent.substring(0, mid2 + 1), font) <= rowWidth) {
+                            if (this.textWidthFunction(remainingContent.substring(0, mid2 + 1), font) <= availableWidth) {
                                 midBreak = mid2
                                 lo2 = mid2 + 1
                             } else {
@@ -472,7 +471,7 @@ export default class Text extends RotatableLabelField implements PositionedField
                                 rowEndIndex = midBreak
                                 nextRowStartIndex = midBreak + 1
                                 usedMidWordBreak = true
-                            }
+                            } 
                         }
 
                         if (!usedMidWordBreak) {
@@ -496,7 +495,7 @@ export default class Text extends RotatableLabelField implements PositionedField
                 commands.push(this.textCommand(thisRow, x, y, font, features))
 
                 if(nextRowStartIndex == remainingContent.length) {
-                    const end = this.advanceChar(x, y, remainingWidth)
+                    const end = this.advanceChar(x, y, remainingContentWidth)
                     finalX = end.x
                     finalY = end.y
                 }
@@ -505,10 +504,11 @@ export default class Text extends RotatableLabelField implements PositionedField
                 const linePos = this.advanceLine(x, y, font.size + this.lineSpacing)
                 x = linePos.x
                 y = linePos.y
+                availableWidth = this.width
                 currentHeight = this.lineOffset(x, y)
 
                 remainingContent = remainingContent.substring(nextRowStartIndex)
-                remainingWidth = textWidhtFunction(remainingContent, font)
+                remainingContentWidth = this.textWidthFunction(remainingContent, font)
             }
         } while(
             // We don't have a height constraint or we are still within bounds 
@@ -601,7 +601,20 @@ export default class Text extends RotatableLabelField implements PositionedField
         return { ...font, size: effectiveSize }
     }
 
-    private get textWidthFunction() {
+    private textWidthFunction(text: string, font: FontOption) {
+        const widthFunction = this._textWidthFunction
+        const rawWidth = widthFunction(text, font)
+
+        const correctionFactor = this.context?.generator.textWidthCorrectionFactor ?? 1
+        if(this.font.name == "default") {
+            return rawWidth
+        } else {
+            const correctedWidth = rawWidth * correctionFactor
+            return correctedWidth
+        }
+    }
+
+    private get _textWidthFunction() {
         if(this.font.name == "default") {
             return (text: string, font: FontOption) => this.defaultTextWidth(text, font)
         } else {
@@ -628,19 +641,19 @@ export default class Text extends RotatableLabelField implements PositionedField
      * @returns 
      */
     private searchForFittingText(remainingContent: string, font: FontOption, rowWidth: number): number {
-        const textWidhtFunction = this.textWidthFunction
         let lo = 0, hi = remainingContent.length - 1
         let rowEndIndex = -1
         while (lo <= hi) {
             const mid = Math.floor((lo + hi) / 2)
-            if (textWidhtFunction(remainingContent.substring(0, mid + 1), font) <= rowWidth) {
+            const w = this.textWidthFunction(remainingContent.substring(0, mid + 1), font)
+            const fits = w <= rowWidth
+            if (fits) {
                 rowEndIndex = mid
                 lo = mid + 1
             } else {
                 hi = mid - 1
             }
         }
-
         return rowEndIndex
     }
 
@@ -657,6 +670,7 @@ export default class Text extends RotatableLabelField implements PositionedField
         const isEndOfWord = !isWhitespace(char) && (isLastChar || isWhitespace(nextChar));
         const isBreakPoint = isBreakAfterChar(char);
 
-        return isEndOfWord || isBreakPoint;
+        const result = isEndOfWord || isBreakPoint;
+        return result;
     }
 }

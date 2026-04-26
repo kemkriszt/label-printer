@@ -13,6 +13,10 @@ import { QRLengthMapping } from "@/helpers/QRCodeUtils";
  * Command generator for tspl commands
  */
 class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
+    get textWidthCorrectionFactor() {
+        return 0.9
+    }
+    
     commandGroup(commands: TSPLCommand[]) {
         return new TSPLCommandGroup(commands)
     }
