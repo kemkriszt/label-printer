@@ -1,7 +1,8 @@
 import { PrinterService } from "@/printers"
 import { Label } from "@/labels"
 // import textExample from "./exampleCases/textExample";
-import classicExample from "./exampleCases/classicExample"
+// import classicExample from "./exampleCases/classicExample"
+import textWrappingExample from "./exampleCases/textWrappingExample"
 // import tableExample from "./exampleCases/tableExample"
 // import svgExample from "./exampleCases/imageTypesExample"
 // import barcodeExample from "./exampleCases/barcodeExample"
@@ -21,8 +22,9 @@ export default async () => {
     if(!monitorPrinter && printers.length > 0) {
         const printer = printers[0]!
 
+        const result = await textWrappingExample()
         // const result = await textExample()
-        const result = await classicExample()
+        // const result = await classicExample()
         // const result = await tableExample()
         // const result = await barcodeExample()
         // const result = await densityExample(8)
