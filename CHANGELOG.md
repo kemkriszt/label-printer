@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.12.1
+
+### Patch Changes
+
+- 5862e46: Fix word wrapping
+
 ## 0.12.0
 
 ### Minor Changes
