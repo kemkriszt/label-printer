@@ -8,8 +8,6 @@ export type PrintConfig = {
     /** Width of the text in dots */
     textWidth: (text: string, font: FontOption) => number,
     getFontName: (font: FontOption) => string,
-    /** Factor to correct text width measurement vs printer rendering (default 1.0, typical 0.9-1.0) */
-    textWidthCorrectionFactor: number
 }
 
 /**

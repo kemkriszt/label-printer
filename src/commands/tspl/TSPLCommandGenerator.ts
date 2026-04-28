@@ -1,6 +1,7 @@
 import { BitmapLike } from "@/helpers/ImageUtils";
 import { Point, UnitSystem } from "..";
 import CommandGenerator from "../CommandGenerator";
+import { dotToPoint, pointsToDots } from "@/helpers/UnitUtils";
 import TSPLCommand from "./TSPLCommand";
 import { TSPLBitmapCommand, TSPLCLSCommand, TSPLCommandGroup, TSPLDensityCommand, TSPLDiagonal, TSPLDirectionCommand, TSPLDisplay, TSPLDownload, TSPLGapCommand, TSPLPrintCommand, TSPLQRCommand, TSPLRawCommand, TSPLSizeCommand, TSPLTextCommand } from "./commands";
 import { Alignment, BarcodeHumanReable, BarcodeType, GraphicMode, LabelDirection } from "./types";
@@ -12,6 +13,10 @@ import { QRLengthMapping } from "@/helpers/QRCodeUtils";
  * Command generator for tspl commands
  */
 class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
+    get textWidthCorrectionFactor() {
+        return 0.9
+    }
+    
     commandGroup(commands: TSPLCommand[]) {
         return new TSPLCommandGroup(commands)
     }
@@ -109,6 +114,12 @@ class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
             default:
                 return { narrow: barWidth, wide: barWidth }
         }
+    }
+
+    normalizeFontSizeInDots(sizeInDots: number, fontName: string, dpi: number): number {
+        const rawPoints = dotToPoint(sizeInDots, dpi)
+        const clampedPoints = Math.max(1, Math.min(10, rawPoints))
+        return pointsToDots(clampedPoints, dpi)
     }
 
     private cellCount(content: string): number {

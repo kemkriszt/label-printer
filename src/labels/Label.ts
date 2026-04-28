@@ -40,7 +40,6 @@ export default class Label extends Printable {
     */
     private container: RotatableContainer
     private fontCounter = 0
-    private _textWidthCorrectionFactor: number = 0.935
 
     /**
      * Configuration used when generating commands
@@ -56,22 +55,11 @@ export default class Label extends Printable {
                     const fontObject = indexedFont.font
                     const run = fontObject.layout(text)
 
-                    return font.size * this._textWidthCorrectionFactor * run.advanceWidth / fontObject.unitsPerEm
+                    return font.size * run.advanceWidth / fontObject.unitsPerEm
                 }
             },
-            getFontName: this.getFontName.bind(this),
-            textWidthCorrectionFactor: this._textWidthCorrectionFactor
-        } 
-    }
-
-    /**
-     * Sets a correction factor for text width measurement.
-     * Values < 1.0 make text wrap less aggressively (more chars per line).
-     * Useful when the printer renders text narrower than fontkit measures.
-     * @param factor Correction factor (default 1.0, typical range 0.9-1.0)
-     */
-    setTextWidthCorrectionFactor(factor: number) {
-        this._textWidthCorrectionFactor = factor
+            getFontName: this.getFontName.bind(this)
+        }
     }
 
     /**

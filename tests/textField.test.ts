@@ -277,6 +277,31 @@ test("Text multiline prefers space break over earlier punctuation break", async 
     expect(rowContents[0]).toBe("ab,c")
 })
 
+test("multiline text with oversized default font wraps using clamped TSPL xmul", async () => {
+    // font.size = 40 dots at 203 DPI → dotToPoint(40, 203) = 14 pts (exceeds TSPL 1-10 range)
+    // After normalization: clampedPoints = 10, effectiveDots ≈ 28.2 → xmul/ymul = 10
+    // Per-char width for wrap = 10; rowWidth = 90 → "Hello World" (110) must wrap
+    const label = new Label(50, 100, "metric", 203)
+    const text = new Text("Hello World", 0, 0, false)
+    text.setFont({ name: "default", size: 40 })
+    text.setMultiLine(90, 300)
+    label.add(text)
+
+    const command = await label.fullPrintCommand("tspl", 3, "normal", 1)
+    const lines: string[] = []
+    command.print((c) => lines.push(c))
+    const textLines = lines.filter(l => l.startsWith("TEXT"))
+
+    expect(textLines.length).toBeGreaterThan(1)
+
+    for (const line of textLines) {
+        const match = line.match(/TEXT \d+,\d+,"0",\d+,(\d+),(\d+),/)
+        expect(match).not.toBeNull()
+        expect(Number(match![1])).toBe(10) // xmul clamped to 10
+        expect(Number(match![2])).toBe(10) // ymul clamped to 10
+    }
+})
+
 test("Text formatted consecutive <p> tags do not create empty lines", async () => {
     const label = new Label(50, 25)
 

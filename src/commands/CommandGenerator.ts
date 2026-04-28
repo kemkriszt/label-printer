@@ -9,6 +9,8 @@ import { BitmapLike } from "@/helpers/ImageUtils";
  * Interface that should be implemented by a command generator object for each language
  */
 export default interface CommandGenerator<T extends Command> {
+    /** Text width calculated by font is multiplied by this factor to bridge the gap between the calculated and actual rendered width */
+    get textWidthCorrectionFactor(): number|undefined
     commandGroup: (commands: T[]) => CommandGroup<T>
     print: (sets: number, copiesPerSet: number) => T
     text: (content: string, x: number, y: number, font: string|"default", size: number, rotation?: Rotation) => T
@@ -21,6 +23,12 @@ export default interface CommandGenerator<T extends Command> {
      * Should instruct the printer to display the image of the label on its screen instead of printing it
      */
     display: () => T
+    /**
+     * Normalize a font size from dots to the effective dots value the printer will actually use.
+     * Applied before layout so word wrap and line height match the rendered output.
+     * Languages that support fractional point sizes may omit this.
+     */
+    normalizeFontSizeInDots?: (sizeInDots: number, fontName: string, dpi: number) => number
     /**
      * This should generate the needed commands to set up a label before printing
      */

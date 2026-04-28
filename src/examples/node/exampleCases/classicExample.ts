@@ -5,11 +5,11 @@ import fs from "fs"
 
 export default async (): Promise<labels.Label> => {
     const fontName = "roboto"
-    const testText = "<i>Exciting</i> <s>things</s> are <del>coming</del> to <strike>label-printer</strike>"
-    const fontSize = 25
+    const testText = "<i>Exciting</i> <s>things</s> are sargabarackpure <strike>label-printer</strike>"
+    const fontSize = 20
     const textX = 10
     const textY = 10
-    const textWidth = 250
+    const textWidth = 240
 
     const qrX = textX
     const qrY = textY + fontSize * 2 + 20
@@ -19,7 +19,7 @@ export default async (): Promise<labels.Label> => {
     const fontItalic = fs.readFileSync(__dirname+"/../Roboto-Italic.ttf").buffer
     const fontBoldItalic = fs.readFileSync(__dirname+"/../Roboto-BoldItalic.ttf").buffer
 
-    const label = new labels.Label(30, 30)
+    const label = new labels.Label(40, 40)
 
     await label.registerFont({name: fontName, data: fontRegular, weight: 400, style: "normal"})
     await label.registerFont({name: fontName, data: fontBold, weight: 700, style: "normal"})
@@ -28,6 +28,7 @@ export default async (): Promise<labels.Label> => {
 
     const text = new labels.Text(testText, textX, textY)
     const line = new labels.Line({x: textX - 5, y: textY}, {x: textX - 5 , y: textY + fontSize * 2 + 2})
+    const line2 = new labels.Line({x: textX, y: textY + fontSize * 2}, {x: textX + textWidth + 5 , y: textY + fontSize * 2}, 2)
     const imageData = await ImageUtils.getBWBitmap("https://firebasestorage.googleapis.com/v0/b/tlprinting-live.appspot.com/o/user%2F1701885792189-favicon.png?alt=media&token=4a7a5940-34d6-416c-ac46-f0c6df3a00e2", 100, 100)
     const image = new labels.Image(qrX, qrY, imageData)
 
@@ -38,8 +39,8 @@ export default async (): Promise<labels.Label> => {
     text.setFont({name: fontName, size: fontSize})
     text.setMultiLine(textWidth)
 
-    label.add(text, line, image)
-    label.setOrientation("right")
+    label.add(text, line, image, line2)
+    // label.setOrientation("right")
 
     return label
 }
