@@ -317,8 +317,11 @@ export default class Text extends RotatableLabelField implements PositionedField
 
         let currentTextFullWidth = this.textWidthFunction(content, font)
 
+        console.debug(`[TextWrap] generatePlainTextCore: content="${content}" fullWidth=${currentTextFullWidth} maxWidth=${this.width} font=${JSON.stringify(font)}`)
+
         // If there is no width constraint, just print the text and return the end position
         if(!this.width) {
+            console.debug(`[TextWrap] no width constraint → printing as-is`)
             const end = this.advanceChar(initialX, initialY, currentTextFullWidth)
             return {
                 x: end.x,
@@ -330,8 +333,10 @@ export default class Text extends RotatableLabelField implements PositionedField
         const initialPadding = this.charOffset(initialX, initialY)
         // Because we may start from further in the row, the first rows width may be smaller
         let availableWidth = this.width - initialPadding
+        console.debug(`[TextWrap] initialPadding=${initialPadding} availableWidth=${availableWidth}`)
         // In theory rowWidth should not be negative, but for some reason it happens.. as a quick work around we make sure it is not negative
         if(availableWidth <= 0) {
+            console.debug(`[TextWrap] availableWidth<=0, resetting to full width and advancing line`)
             availableWidth = this.width
             const linePos = this.advanceLine(initialX, initialY, font.size + this.lineSpacing)
             initialX = linePos.x
@@ -342,11 +347,13 @@ export default class Text extends RotatableLabelField implements PositionedField
         if(this.atLineStart(initialX, initialY)) {
             content = content.trimStart()
             currentTextFullWidth = this.textWidthFunction(content, font)
+            console.debug(`[TextWrap] at line start → trimmed leading spaces: content="${content}" fullWidth=${currentTextFullWidth}`)
         }
 
         // We may not start from the beginning of the textbox so we have to offset
         // by our current position
         if(currentTextFullWidth <= availableWidth) {
+            console.debug(`[TextWrap] FITS in one row (fullWidth=${currentTextFullWidth} <= availableWidth=${availableWidth}) → no wrapping`)
             const end = this.advanceChar(initialX, initialY, currentTextFullWidth)
             return {
                 x: end.x,
@@ -369,8 +376,10 @@ export default class Text extends RotatableLabelField implements PositionedField
         let finalY = y
 
         do {
+            console.debug(`[TextWrap] --- loop iteration --- remaining="${remainingContent}" remainingWidth=${remainingContentWidth} availableWidth=${availableWidth}`)
             // This will be the last row of the text.
             if(remainingContentWidth < availableWidth) {
+                console.debug(`[TextWrap] LAST ROW: remainingWidth(${remainingContentWidth}) < availableWidth(${availableWidth}) → printing rest as-is: "${remainingContent}"`)
                 const end = this.advanceChar(x, y, remainingContentWidth)
                 finalX = end.x
                 finalY = end.y
@@ -380,9 +389,11 @@ export default class Text extends RotatableLabelField implements PositionedField
             } else {
                 let rowEndIndex = this.searchForFittingText(remainingContent, font, availableWidth)
                 let originalRowEndIndex = rowEndIndex
+                console.debug(`[TextWrap] binary search → rowEndIndex=${rowEndIndex} fits="${remainingContent.substring(0, rowEndIndex + 1)}"`)
 
                 // Even the first character doesn't fit — advance to the next line
                 if (rowEndIndex < 0) {
+                    console.debug(`[TextWrap] first char doesn't fit → advancing to next line`)
                     const linePos = this.advanceLine(x, y, font.size + this.lineSpacing)
                     availableWidth = this.width
                     x = linePos.x
@@ -396,9 +407,11 @@ export default class Text extends RotatableLabelField implements PositionedField
 
                 let nextRowStartIndex = rowEndIndex + 1
                 const foundWordBoundary = this.isAtWordBoundary(rowEndIndex, remainingContent)
+                console.debug(`[TextWrap] walk-back → rowEndIndex=${rowEndIndex} char="${remainingContent.charAt(rowEndIndex)}" foundWordBoundary=${foundWordBoundary}`)
 
                 if (!foundWordBoundary) {
                     // No word boundary at all — mid-word break at binary-search result
+                    console.debug(`[TextWrap] BRANCH: no word boundary found → mid-word break at binary-search result (${originalRowEndIndex})`)
                     rowEndIndex = originalRowEndIndex
                     nextRowStartIndex = originalRowEndIndex + 1
 
@@ -408,9 +421,11 @@ export default class Text extends RotatableLabelField implements PositionedField
                         wordEnd++
                     }
                     const charsOnNext = wordEnd - originalRowEndIndex - 1
+                    console.debug(`[TextWrap]   charsOnNext=${charsOnNext} (min=${Text.MIN_WORD_BREAK_CHARS})`)
                     if (charsOnNext > 0 && charsOnNext < Text.MIN_WORD_BREAK_CHARS) {
                         const adjusted = originalRowEndIndex - (Text.MIN_WORD_BREAK_CHARS - charsOnNext)
                         if (adjusted >= 0) {
+                            console.debug(`[TextWrap]   too few chars on next line → pulling back break to ${adjusted}`)
                             rowEndIndex = adjusted
                             nextRowStartIndex = adjusted + 1
                         }
@@ -431,16 +446,20 @@ export default class Text extends RotatableLabelField implements PositionedField
                     }
 
                     const nextWord = remainingContent.substring(wordStart, fullWordEnd)
+                    console.debug(`[TextWrap] BRANCH: word boundary at ${rowEndIndex}, binary search fit more → check if next word "${nextWord}" fits (wordStart=${wordStart} fullWordEnd=${fullWordEnd})`)
 
                     // Check if the line including the full word fits within rowWidth.
                     // The global correction factor (applied in textWidth) already reduces
                     // measurements, so we just check against the actual line width here.
                     const lineWithFullWord = this.textWidthFunction(remainingContent.substring(0, fullWordEnd), font)
+                    console.debug(`[TextWrap]   lineWithFullWord=${lineWithFullWord} availableWidth=${availableWidth}`)
                     if (lineWithFullWord <= availableWidth) {
                         // Full word fits within tolerance — include it
+                        console.debug(`[TextWrap]   → full word fits → extending rowEndIndex to ${fullWordEnd - 1}`)
                         rowEndIndex = fullWordEnd - 1
                         nextRowStartIndex = fullWordEnd
                     } else {
+                        console.debug(`[TextWrap]   → full word does NOT fit → attempting mid-word break in "${nextWord}"`)
                         // Full word doesn't fit even with tolerance — try mid-word break.
                         // Use a fresh binary search within the word to find the optimal
                         // break point (avoids issues when originalRowEndIndex lands on whitespace).
@@ -455,27 +474,34 @@ export default class Text extends RotatableLabelField implements PositionedField
                                 hi2 = mid2 - 1
                             }
                         }
+                        console.debug(`[TextWrap]   mid-word binary search → midBreak=${midBreak}`)
 
                         let usedMidWordBreak = false
                         if (midBreak >= wordStart) {
                             let charsOnLine = midBreak - wordStart + 1
                             let charsOnNext = fullWordEnd - midBreak - 1
+                            console.debug(`[TextWrap]   charsOnLine=${charsOnLine} charsOnNext=${charsOnNext} (min=${Text.MIN_WORD_BREAK_CHARS})`)
 
                             // Ensure at least MIN_WORD_BREAK_CHARS on next line
                             if (charsOnNext > 0 && charsOnNext < Text.MIN_WORD_BREAK_CHARS) {
                                 midBreak -= (Text.MIN_WORD_BREAK_CHARS - charsOnNext)
                                 charsOnLine = midBreak - wordStart + 1
+                                console.debug(`[TextWrap]   too few chars on next line → adjusted midBreak=${midBreak} charsOnLine=${charsOnLine}`)
                             }
 
                             if (charsOnLine >= Text.MIN_WORD_BREAK_CHARS) {
+                                console.debug(`[TextWrap]   → mid-word break accepted at ${midBreak}`)
                                 rowEndIndex = midBreak
                                 nextRowStartIndex = midBreak + 1
                                 usedMidWordBreak = true
-                            } 
+                            } else {
+                                console.debug(`[TextWrap]   → mid-word break rejected (charsOnLine=${charsOnLine} < min=${Text.MIN_WORD_BREAK_CHARS})`)
+                            }
                         }
 
                         if (!usedMidWordBreak) {
                             // Can't mid-word break — fall back to word boundary
+                            console.debug(`[TextWrap]   → falling back to word boundary at ${rowEndIndex}`)
                             nextRowStartIndex = rowEndIndex + 1
                             while(
                                 isWhitespace(remainingContent.charAt(nextRowStartIndex)) &&
@@ -485,6 +511,7 @@ export default class Text extends RotatableLabelField implements PositionedField
                     }
                 } else {
                     // Skip leading whitespace on the next row
+                    console.debug(`[TextWrap] BRANCH: exactly at word boundary (rowEndIndex=${rowEndIndex} == originalRowEndIndex=${originalRowEndIndex}) → skipping leading whitespace`)
                     while(
                         isWhitespace(remainingContent.charAt(nextRowStartIndex)) &&
                         nextRowStartIndex < remainingContent.length
@@ -492,6 +519,7 @@ export default class Text extends RotatableLabelField implements PositionedField
                 }
 
                 const thisRow = remainingContent.substring(0, rowEndIndex + 1)
+                console.debug(`[TextWrap] PRINT ROW: "${thisRow}" | next starts at ${nextRowStartIndex}: "${remainingContent.substring(nextRowStartIndex)}"`)
                 commands.push(this.textCommand(thisRow, x, y, font, features))
 
                 if(nextRowStartIndex == remainingContent.length) {
@@ -643,10 +671,12 @@ export default class Text extends RotatableLabelField implements PositionedField
     private searchForFittingText(remainingContent: string, font: FontOption, rowWidth: number): number {
         let lo = 0, hi = remainingContent.length - 1
         let rowEndIndex = -1
+        console.debug(`[TextWrap]   searchForFittingText: "${remainingContent}" rowWidth=${rowWidth}`)
         while (lo <= hi) {
             const mid = Math.floor((lo + hi) / 2)
             const w = this.textWidthFunction(remainingContent.substring(0, mid + 1), font)
             const fits = w <= rowWidth
+            console.debug(`[TextWrap]     lo=${lo} hi=${hi} mid=${mid} w=${w} fits=${fits} substr="${remainingContent.substring(0, mid + 1)}"`)
             if (fits) {
                 rowEndIndex = mid
                 lo = mid + 1
@@ -654,6 +684,7 @@ export default class Text extends RotatableLabelField implements PositionedField
                 hi = mid - 1
             }
         }
+        console.debug(`[TextWrap]   searchForFittingText result: ${rowEndIndex} ("${remainingContent.substring(0, rowEndIndex + 1)}")`)
         return rowEndIndex
     }
 
@@ -671,6 +702,7 @@ export default class Text extends RotatableLabelField implements PositionedField
         const isBreakPoint = isBreakAfterChar(char);
 
         const result = isEndOfWord || isBreakPoint;
+        console.debug(`[TextWrap]   isAtWordBoundary(${index}): char="${char}" nextChar="${nextChar}" isLastChar=${isLastChar} isEndOfWord=${isEndOfWord} isBreakPoint=${isBreakPoint} → ${result}`)
         return result;
     }
 }
