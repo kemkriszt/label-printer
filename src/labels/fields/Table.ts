@@ -1,6 +1,8 @@
-import { Command, PrinterLanguage } from "@/commands";
+import { Command, Point, PrinterLanguage } from "@/commands";
 import { isWhitespace } from "@/helpers/StringUtils";
 import LabelField from "./superClasses/LabelField";
+import RotatableLabelField from "./superClasses/RotatableLabelField";
+import { PositionedField } from "./superClasses/interfaces";
 import Line from "./Line";
 import Text from "./Text";
 import { PrintConfig } from "../Printable";
@@ -25,9 +27,9 @@ export type TableOptions = {
     font?: FontOption
 }
 
-export default class Table extends LabelField {
-    private readonly x: number
-    private readonly y: number
+export default class Table extends RotatableLabelField implements PositionedField {
+    private x: number
+    private y: number
     private readonly rows: TableCellContent[][]
 
     private size: TableSize|undefined
@@ -82,6 +84,9 @@ export default class Table extends LabelField {
         this.font = font
     }
 
+    getPosition(): Point { return { x: this.x, y: this.y } }
+    setPosition(position: Point) { this.x = position.x; this.y = position.y }
+
     async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {
         // Table rendering is implemented by composing existing primitives:
         // - Text fields for cell contents
@@ -115,6 +120,10 @@ export default class Table extends LabelField {
         const xPositions = this.accumulatePositions(this.x, resolvedColumnWidths)
         const yPositions = this.accumulatePositions(this.y, resolvedRowHeights)
 
+        // Total table dimensions — needed before field creation so rotatePoint can use them.
+        const totalWidth = resolvedColumnWidths.reduce((a, b) => a + b, 0)
+        const totalHeight = resolvedRowHeights.reduce((a, b) => a + b, 0)
+
         // We generate an internal list of LabelFields and then group their commands.
         // This ensures we reuse the exact behavior of the existing Text and Line fields.
         const fields: LabelField[] = []
@@ -130,31 +139,32 @@ export default class Table extends LabelField {
                 const cellHeight = resolvedRowHeights[rowIndex]
 
                 // Apply padding so text doesn't touch grid lines.
-                const textX = cellX + this.cellPadding
-                const textY = cellY + this.cellPadding
                 const textWidth = Math.max(1, cellWidth - (this.cellPadding * 2))
                 const textHeight = Math.max(1, cellHeight - (this.cellPadding * 2))
 
-                const text = new Text(cellContent, textX, textY, this.formatted)
+                const textPos = this.rotatePoint(
+                    { x: cellX + this.cellPadding, y: cellY + this.cellPadding },
+                    totalWidth, totalHeight
+                )
+                const text = new Text(cellContent, textPos.x, textPos.y, this.formatted)
                 text.setFont(this.font)
+                text.setRotation(this.rotation)
                 // Multi-line text behavior matches the existing Text field:
                 // - wraps when width is exceeded
                 // - clips once the height constraint is reached
+                // setMultiLine dimensions are unchanged for all rotations: Text interprets
+                // them along its own char/line axes, which already account for rotation.
                 text.setMultiLine(textWidth, textHeight)
                 fields.push(text)
             }
         }
 
-        // Total table dimensions (after resolving track sizes).
-        const totalWidth = resolvedColumnWidths.reduce((a, b) => a + b, 0)
-        const totalHeight = resolvedRowHeights.reduce((a, b) => a + b, 0)
-
         // Vertical grid lines (including left and right borders).
         for(let colIndex = 0; colIndex <= colCount; colIndex++) {
             const sx = colIndex == colCount ? this.x + totalWidth : xPositions[colIndex]
             fields.push(new Line(
-                {x: sx, y: this.y},
-                {x: sx, y: this.y + totalHeight},
+                this.rotatePoint({x: sx, y: this.y}, totalWidth, totalHeight),
+                this.rotatePoint({x: sx, y: this.y + totalHeight}, totalWidth, totalHeight),
                 this.lineThickness
             ))
         }
@@ -163,8 +173,8 @@ export default class Table extends LabelField {
         for(let rowIndex = 0; rowIndex <= rowCount; rowIndex++) {
             const sy = rowIndex == rowCount ? this.y + totalHeight : yPositions[rowIndex]
             fields.push(new Line(
-                {x: this.x, y: sy},
-                {x: this.x + totalWidth, y: sy},
+                this.rotatePoint({x: this.x, y: sy}, totalWidth, totalHeight),
+                this.rotatePoint({x: this.x + totalWidth, y: sy}, totalWidth, totalHeight),
                 this.lineThickness
             ))
         }
@@ -172,6 +182,19 @@ export default class Table extends LabelField {
         // Finally, generate and group all underlying commands.
         const commandList = await Promise.all(fields.map(field => field.commandForLanguage(language, config)))
         return generator.commandGroup(commandList)
+    }
+
+    private rotatePoint(p: Point, totalWidth: number, totalHeight: number): Point {
+        switch(this.rotation) {
+            case 90:
+                return { x: this.x + totalHeight - (p.y - this.y), y: this.y + (p.x - this.x) }
+            case 180:
+                return { x: this.x + totalWidth - (p.x - this.x), y: this.y + totalHeight - (p.y - this.y) }
+            case 270:
+                return { x: this.x + (p.y - this.y), y: this.y + totalWidth - (p.x - this.x) }
+            default:
+                return p
+        }
     }
 
     private accumulatePositions(start: number, sizes: number[]): number[] {
