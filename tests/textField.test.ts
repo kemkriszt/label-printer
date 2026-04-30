@@ -27,8 +27,8 @@ test("Text formatted underline/strike generates extra line commands", async () =
 
     const lines = await commandStrings(label)
 
-    // underline and strike are implemented via generator.line => DIAGONAL commands
-    expect(lines.some(l => l.startsWith("DIAGONAL"))).toBe(true)
+    // underline and strike are implemented via generator.line => BAR commands (axis-aligned)
+    expect(lines.some(l => l.startsWith("BAR"))).toBe(true)
     expect(lines.filter(l => l.startsWith("TEXT")).length).toBeGreaterThanOrEqual(2)
 })
 
