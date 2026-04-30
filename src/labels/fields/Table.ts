@@ -161,20 +161,36 @@ export default class Table extends RotatableLabelField implements PositionedFiel
 
         // Vertical grid lines (including left and right borders).
         for(let colIndex = 0; colIndex <= colCount; colIndex++) {
-            const sx = colIndex == colCount ? this.x + totalWidth : xPositions[colIndex]
+            const isLast = colIndex === colCount
+            const sx = isLast ? this.x + totalWidth : xPositions[colIndex]
+            // The bar for the visual right boundary would extend beyond the table's right edge
+            // by lineThickness. Shift it inward so the bar's far edge stays within bounds.
+            // Which original line maps to the visual right boundary depends on rotation:
+            //   0°/90°: the last column (isLast)  →  shift left
+            //   180°/270°: the first column (colIndex=0)  →  shift right
+            let sxBar = sx
+            if (isLast && (this.rotation === 0 || this.rotation === 90)) sxBar -= this.lineThickness
+            else if (!isLast && colIndex === 0 && (this.rotation === 180 || this.rotation === 270)) sxBar += this.lineThickness
             fields.push(new Line(
-                this.rotatePoint({x: sx, y: this.y}, totalWidth, totalHeight),
-                this.rotatePoint({x: sx, y: this.y + totalHeight}, totalWidth, totalHeight),
+                this.rotatePoint({x: sxBar, y: this.y}, totalWidth, totalHeight),
+                this.rotatePoint({x: sxBar, y: this.y + totalHeight}, totalWidth, totalHeight),
                 this.lineThickness
             ))
         }
 
         // Horizontal grid lines (including top and bottom borders).
         for(let rowIndex = 0; rowIndex <= rowCount; rowIndex++) {
-            const sy = rowIndex == rowCount ? this.y + totalHeight : yPositions[rowIndex]
+            const isLastRow = rowIndex === rowCount
+            const sy = isLastRow ? this.y + totalHeight : yPositions[rowIndex]
+            // Same boundary fix for horizontal lines:
+            //   0°/270°: last row (isLastRow)  →  shift up
+            //   90°/180°: first row (rowIndex=0)  →  shift down
+            let syBar = sy
+            if (isLastRow && (this.rotation === 0 || this.rotation === 270)) syBar -= this.lineThickness
+            else if (!isLastRow && rowIndex === 0 && (this.rotation === 90 || this.rotation === 180)) syBar += this.lineThickness
             fields.push(new Line(
-                this.rotatePoint({x: this.x, y: sy}, totalWidth, totalHeight),
-                this.rotatePoint({x: this.x + totalWidth, y: sy}, totalWidth, totalHeight),
+                this.rotatePoint({x: this.x, y: syBar}, totalWidth, totalHeight),
+                this.rotatePoint({x: this.x + totalWidth, y: syBar}, totalWidth, totalHeight),
                 this.lineThickness
             ))
         }
