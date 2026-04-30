@@ -4,6 +4,7 @@ import CommandGenerator from "../CommandGenerator";
 import { dotToPoint, pointsToDots } from "@/helpers/UnitUtils";
 import TSPLCommand from "./TSPLCommand";
 import { TSPLBitmapCommand, TSPLCLSCommand, TSPLCommandGroup, TSPLDensityCommand, TSPLDiagonal, TSPLDirectionCommand, TSPLDisplay, TSPLDownload, TSPLGapCommand, TSPLPrintCommand, TSPLQRCommand, TSPLRawCommand, TSPLSizeCommand, TSPLTextCommand } from "./commands";
+import TSPLBarCommand from "./commands/basic/TSPLBarCommand";
 import { Alignment, BarcodeHumanReable, BarcodeType, GraphicMode, LabelDirection } from "./types";
 import { Rotation } from "@/commands";
 import TSPLBarcodeCommand from "./commands/basic/TSPLBarcodeCommand";
@@ -63,6 +64,16 @@ class TSPLCommandGenerator implements CommandGenerator<TSPLCommand> {
     }
 
     line(start: Point, end: Point, thickness: number): TSPLCommand {
+        if (start.x === end.x) {
+            const y = Math.min(start.y, end.y)
+            const height = Math.abs(end.y - start.y)
+            return new TSPLBarCommand(start.x, y, thickness, height)
+        }
+        if (start.y === end.y) {
+            const x = Math.min(start.x, end.x)
+            const width = Math.abs(end.x - start.x)
+            return new TSPLBarCommand(x, start.y, width, thickness)
+        }
         return new TSPLDiagonal(start, end, thickness)
     }
     
