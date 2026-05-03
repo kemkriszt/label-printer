@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.13.0
+
+### Minor Changes
+
+- 4db55da: Fall back to sharp if no resvg is available
+
 ## 0.12.1
 
 ### Patch Changes
