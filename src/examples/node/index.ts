@@ -1,10 +1,10 @@
 import { PrinterService } from "@/printers"
 import { Label } from "@/labels"
 // import textExample from "./exampleCases/textExample";
-// import classicExample from "./exampleCases/classicExample"
-import textWrappingExample from "./exampleCases/textWrappingExample"
+import classicExample from "./exampleCases/classicExample"
+// import textWrappingExample from "./exampleCases/textWrappingExample"
 // import tableExample from "./exampleCases/tableExample"
-import tableRotationExample from "./exampleCases/tableRotationExample"
+// import tableRotationExample from "./exampleCases/tableRotationExample"
 // import svgExample from "./exampleCases/imageTypesExample"
 // import barcodeExample from "./exampleCases/barcodeExample"
 // import densityExample from "./exampleCases/densityExample"
@@ -25,9 +25,9 @@ export default async () => {
 
         // const result = await textWrappingExample()
         // const result = await textExample()
-        // const result = await classicExample()
+        const result = await classicExample()
         // const result = await tableExample()
-        const result = await tableRotationExample()
+        // const result = await tableRotationExample()
         // const result = await barcodeExample()
         // const result = await densityExample(8)
         // const result = await rotationExample()
