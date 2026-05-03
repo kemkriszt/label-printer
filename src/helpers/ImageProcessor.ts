@@ -94,7 +94,7 @@ export class ImageProcessor {
 
     const trimmed = image.trim()
     if (trimmed.startsWith('<svg')) {
-      return this.rasterizeSVGNode(trimmed, _target)
+      return await this.rasterizeSVGNode(trimmed, _target)
     }
     
     // Check if it's a data URL
@@ -126,7 +126,7 @@ export class ImageProcessor {
       const svgText = isBase64
         ? Buffer.from(data, 'base64').toString('utf8')
         : decodeURIComponent(data)
-      return this.rasterizeSVGNode(svgText, target)
+      return await this.rasterizeSVGNode(svgText, target)
     }
 
     const buffer = Buffer.from(data, 'base64');
@@ -151,7 +151,7 @@ export class ImageProcessor {
 
     if (ext === '.svg') {
       const svgText = buffer.toString('utf8')
-      return this.rasterizeSVGNode(svgText, target)
+      return await this.rasterizeSVGNode(svgText, target)
     }
 
     return this.parse(buffer, ext);
@@ -191,7 +191,7 @@ export class ImageProcessor {
 
     if (imageType === 'svg') {
       const svgText = buffer.toString('utf8')
-      return this.rasterizeSVGNode(svgText, target)
+      return await this.rasterizeSVGNode(svgText, target)
     }
 
     return this.parse(buffer, imageType);
@@ -302,27 +302,42 @@ export class ImageProcessor {
     }
   }
 
-  private static rasterizeSVGNode(svg: string, target?: { width: number; height: number }): ImageData {
+  private static async rasterizeSVGNode(svg: string, target?: { width: number; height: number }): Promise<ImageData> {
     // TODO: This is Node-only. For best browser-safety this likely benefits from conditional exports so
-    // browser bundlers don't attempt to include @resvg/resvg-js.
+    // browser bundlers don't attempt to include @resvg/resvg-js or sharp.
+    let pngBuffer: Buffer
+
     let Resvg: any
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       Resvg = eval("require")("@resvg/resvg-js").Resvg
     } catch (_e) {
-      throw new Error('svg-rasterizer-missing')
+      // fall through to sharp
     }
 
-    const fitTo = target
-      ? { mode: 'width' as const, value: target.width }
-      : undefined
+    if (Resvg) {
+      const fitTo = target
+        ? { mode: 'width' as const, value: target.width }
+        : undefined
 
-    const resvg = new Resvg(svg, {
-      fitTo,
-    })
+      const resvg = new Resvg(svg, { fitTo })
+      pngBuffer = Buffer.from(resvg.render().asPng())
+    } else {
+      let sharp: any
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        sharp = eval("require")("sharp")
+      } catch (_e) {
+        throw new Error('svg-rasterizer-missing')
+      }
 
-    const pngData: Uint8Array = resvg.render().asPng()
-    const pngBuffer = Buffer.from(pngData)
+      const sharpInstance = sharp(Buffer.from(svg))
+      if (target) {
+        sharpInstance.resize(target.width, target.height)
+      }
+      pngBuffer = await sharpInstance.png().toBuffer()
+    }
+
     const imageData = parsePNG(pngBuffer)
 
     if (target && (imageData.width !== target.width || imageData.height !== target.height)) {
