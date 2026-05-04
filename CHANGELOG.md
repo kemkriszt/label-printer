@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.13.1
+
+### Patch Changes
+
+- 5ac2fe1: Attempt to fix vercel
+
 ## 0.13.0
 
 ### Minor Changes
