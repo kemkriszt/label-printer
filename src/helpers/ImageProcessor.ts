@@ -325,8 +325,9 @@ export class ImageProcessor {
     } else {
       let sharp: any
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        sharp = eval("require")("sharp")
+        // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/ban-ts-comment
+        // @ts-ignore - sharp is an optional runtime dependency
+        sharp = await import(/* webpackIgnore: true */ /* @vite-ignore */ 'sharp').then((m: any) => m.default ?? m)
       } catch (_e) {
         throw new Error('svg-rasterizer-missing')
       }
