@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.13.2
+
+### Patch Changes
+
+- c87fa86: Mark sharp external
+
 ## 0.13.1
 
 ### Patch Changes
