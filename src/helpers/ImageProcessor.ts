@@ -309,8 +309,7 @@ export class ImageProcessor {
 
     let Resvg: any
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      Resvg = eval("require")("@resvg/resvg-js").Resvg
+      Resvg = await import(/* webpackIgnore: true */ /* @vite-ignore */ '@resvg/resvg-js').then((m: any) => m.Resvg ?? m.default?.Resvg)
     } catch (_e) {
       // fall through to sharp
     }
