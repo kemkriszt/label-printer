@@ -1,5 +1,29 @@
 # label-printer
 
+## 0.13.3
+
+### Patch Changes
+
+- 88609ea: Attempt to fix vercel
+
+## 0.13.2
+
+### Patch Changes
+
+- c87fa86: Mark sharp external
+
+## 0.13.1
+
+### Patch Changes
+
+- 5ac2fe1: Attempt to fix vercel
+
+## 0.13.0
+
+### Minor Changes
+
+- 4db55da: Fall back to sharp if no resvg is available
+
 ## 0.12.1
 
 ### Patch Changes
