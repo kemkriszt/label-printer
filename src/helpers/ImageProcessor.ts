@@ -310,7 +310,8 @@ export class ImageProcessor {
     let Resvg: any
     try {
       Resvg = await import(/* webpackIgnore: true */ /* @vite-ignore */ '@resvg/resvg-js').then((m: any) => m.Resvg ?? m.default?.Resvg)
-    } catch (_e) {
+    } catch (resvgError) {
+      console.error('[label-printer] @resvg/resvg-js failed to load:', resvgError)
       // fall through to sharp
     }
 
@@ -327,7 +328,8 @@ export class ImageProcessor {
         // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/ban-ts-comment
         // @ts-ignore - sharp is an optional runtime dependency
         sharp = await import(/* webpackIgnore: true */ /* @vite-ignore */ 'sharp').then((m: any) => m.default ?? m)
-      } catch (_e) {
+      } catch (sharpError) {
+        console.error('[label-printer] sharp failed to load:', sharpError)
         throw new Error('svg-rasterizer-missing')
       }
 
