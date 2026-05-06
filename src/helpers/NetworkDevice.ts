@@ -115,9 +115,11 @@ export default class NetworkDevice implements Device {
             throw new Error("network-not-open")
         }
 
+        const buffer = data instanceof ArrayBuffer ? Buffer.from(data) : data
+
         await new Promise<void>((resolve, reject) => {
             try {
-                this.socket!.write(data as any, (err?: Error) => {
+                this.socket!.write(buffer, (err?: Error) => {
                     if(err) reject(err)
                     else resolve()
                 })
