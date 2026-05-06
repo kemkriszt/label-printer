@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.13.5
+
+### Patch Changes
+
+- d85541f: Add support for external rasterization
+
 ## 0.13.4
 
 ### Patch Changes
