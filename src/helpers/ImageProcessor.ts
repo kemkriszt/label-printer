@@ -315,12 +315,16 @@ export class ImageProcessor {
     // browser bundlers don't attempt to include @resvg/resvg-js or sharp.
     let pngBuffer: Buffer
 
+    console.log("Processing SVG with target size")
     if (_svgRasterizer) {
+      console.log("Using custom SVG rasterizer")
       pngBuffer = await _svgRasterizer(svg, target)
     } else {
+      console.log("Using default SVG rasterizer (@resvg/resvg-js or sharp fallback)")
       let Resvg: any
       try {
-        Resvg = await import(/* webpackIgnore: true */ /* @vite-ignore */ '@resvg/resvg-js').then((m: any) => m.Resvg ?? m.default?.Resvg)
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        Resvg = eval("require")("@resvg/resvg-js").Resvg
       } catch (resvgError) {
         console.error('[label-printer] @resvg/resvg-js failed to load:', resvgError)
       }

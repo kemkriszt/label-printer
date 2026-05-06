@@ -17,8 +17,8 @@ function sleep(ms: number) {
 export default async () => {
     const displayOverPrint = true
     const monitorPrinter = false
-    const printers = await PrinterService.getPrinters()
-    // const printers = [await PrinterService.connectTSPL({ network: { host: "192.168.100.31", port: 9100 } })]
+    // const printers = await PrinterService.getPrinters()
+    const printers = [await PrinterService.connectTSPL({ network: { host: "192.168.100.31", port: 9100 } })]
 
     if(!monitorPrinter && printers.length > 0) {
         const printer = printers[0]!
