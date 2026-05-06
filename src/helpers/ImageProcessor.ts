@@ -5,6 +5,14 @@
  */
 import { ImageData, parsePNG } from './ImageDataParser';
 
+type SVGRasterizer = (svg: string, target?: { width: number; height: number }) => Promise<Buffer> | Buffer
+
+let _svgRasterizer: SVGRasterizer | null = null
+
+export function configureSVGRasterizer(fn: SVGRasterizer): void {
+  _svgRasterizer = fn
+}
+
 export class ImageProcessor {
   /**
    * Get pixel information about an image
@@ -307,37 +315,40 @@ export class ImageProcessor {
     // browser bundlers don't attempt to include @resvg/resvg-js or sharp.
     let pngBuffer: Buffer
 
-    let Resvg: any
-    try {
-      Resvg = await import(/* webpackIgnore: true */ /* @vite-ignore */ '@resvg/resvg-js').then((m: any) => m.Resvg ?? m.default?.Resvg)
-    } catch (resvgError) {
-      console.error('[label-printer] @resvg/resvg-js failed to load:', resvgError)
-      // fall through to sharp
-    }
-
-    if (Resvg) {
-      const fitTo = target
-        ? { mode: 'width' as const, value: target.width }
-        : undefined
-
-      const resvg = new Resvg(svg, { fitTo })
-      pngBuffer = Buffer.from(resvg.render().asPng())
+    if (_svgRasterizer) {
+      pngBuffer = await _svgRasterizer(svg, target)
     } else {
-      let sharp: any
+      let Resvg: any
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/ban-ts-comment
-        // @ts-ignore - sharp is an optional runtime dependency
-        sharp = await import(/* webpackIgnore: true */ /* @vite-ignore */ 'sharp').then((m: any) => m.default ?? m)
-      } catch (sharpError) {
-        console.error('[label-printer] sharp failed to load:', sharpError)
-        throw new Error('svg-rasterizer-missing')
+        Resvg = await import(/* webpackIgnore: true */ /* @vite-ignore */ '@resvg/resvg-js').then((m: any) => m.Resvg ?? m.default?.Resvg)
+      } catch (resvgError) {
+        console.error('[label-printer] @resvg/resvg-js failed to load:', resvgError)
       }
 
-      const sharpInstance = sharp(Buffer.from(svg))
-      if (target) {
-        sharpInstance.resize(target.width, target.height)
+      if (Resvg) {
+        const fitTo = target
+          ? { mode: 'width' as const, value: target.width }
+          : undefined
+
+        const resvg = new Resvg(svg, { fitTo })
+        pngBuffer = Buffer.from(resvg.render().asPng())
+      } else {
+        let sharp: any
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/ban-ts-comment
+          // @ts-ignore - sharp is an optional runtime dependency
+          sharp = await import(/* webpackIgnore: true */ /* @vite-ignore */ 'sharp').then((m: any) => m.default ?? m)
+        } catch (sharpError) {
+          console.error('[label-printer] sharp failed to load:', sharpError)
+          throw new Error('svg-rasterizer-missing')
+        }
+
+        const sharpInstance = sharp(Buffer.from(svg))
+        if (target) {
+          sharpInstance.resize(target.width, target.height)
+        }
+        pngBuffer = await sharpInstance.png().toBuffer()
       }
-      pngBuffer = await sharpInstance.png().toBuffer()
     }
 
     const imageData = parsePNG(pngBuffer)
