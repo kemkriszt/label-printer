@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.13.6
+
+### Patch Changes
+
+- b7160b3: Fix bold font issues
+
 ## 0.13.5
 
 ### Patch Changes
