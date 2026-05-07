@@ -2,6 +2,7 @@ import Device from "@/helpers/Device"
 import { getDevices, requestDevice, requestDeviceWithFilters } from "@/helpers/USBUtils"
 import NetworkDevice from "@/helpers/NetworkDevice"
 import TSPLPrinter from "./TSPLPrinter"
+import ZPLPrinter from "./ZPLPrinter"
 import Printer from "./Printer"
 
 export type PrinterServiceUsbConnectOptions = {
@@ -26,7 +27,7 @@ export class PrinterService {
      * @returns 
      */
     static async printerForDevice(device: Device): Promise<Printer|undefined> {
-        const classes = [TSPLPrinter]
+        const classes = [TSPLPrinter, ZPLPrinter]
 
         for (const key in classes) {
             try {
@@ -51,7 +52,7 @@ export class PrinterService {
      * class' `try(device)` method.
      */
     private static async discoverDevices(): Promise<Device[]> {
-        const classes = [TSPLPrinter]
+        const classes = [TSPLPrinter, ZPLPrinter]
 
         const discoveryResults = await Promise.all(classes.map(async (cls) => {
             const discoverer = (cls as any).discoverDevices
