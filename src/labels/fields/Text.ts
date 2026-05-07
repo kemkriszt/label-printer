@@ -441,6 +441,11 @@ export default class Text extends RotatableLabelField implements PositionedField
                         // Full word fits within tolerance — include it
                         rowEndIndex = fullWordEnd - 1
                         nextRowStartIndex = fullWordEnd
+                        // Skip leading whitespace on the next row (mirrors the else branch below)
+                        while (
+                            isWhitespace(remainingContent.charAt(nextRowStartIndex)) &&
+                            nextRowStartIndex < remainingContent.length
+                        ) { nextRowStartIndex++ }
                     } else {
                         // Full word doesn't fit even with tolerance — try mid-word break.
                         // Use a fresh binary search within the word to find the optimal
@@ -496,7 +501,7 @@ export default class Text extends RotatableLabelField implements PositionedField
                 commands.push(this.textCommand(thisRow, x, y, font, features))
 
                 if(nextRowStartIndex == remainingContent.length) {
-                    const end = this.advanceChar(x, y, remainingContentWidth)
+                    const end = this.advanceChar(x, y, this.textWidthFunction(thisRow, font))
                     finalX = end.x
                     finalY = end.y
                 }
