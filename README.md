@@ -198,6 +198,20 @@ const img = await labels.Image.create("./logo.png", 10, 60, 200)
 label.add(img)
 ```
 
+SVG inputs are supported. In Node.js, the library will automatically try to load `@resvg/resvg-js` or `sharp` for rasterization. If neither can be auto-loaded (e.g. on Vercel or other bundled environments), configure the rasterizer explicitly at app startup:
+
+```ts
+import { Resvg } from '@resvg/resvg-js'
+import { configureSVGRasterizer } from 'label-printer'
+
+configureSVGRasterizer((svg, target) => {
+  const resvg = new Resvg(svg, target ? { fitTo: { mode: 'width', value: target.width } } : undefined)
+  return Buffer.from(resvg.render().asPng())
+})
+```
+
+This is only needed when the automatic loading fails — in standard Node.js environments with `@resvg/resvg-js` installed it works without any configuration.
+
 ### BarCode
 
 Draw a barcode (TSPL-backed). Values are in **dots**.
