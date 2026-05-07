@@ -348,6 +348,12 @@ export default class Text extends RotatableLabelField implements PositionedField
         // We may not start from the beginning of the textbox so we have to offset
         // by our current position
         if(currentTextFullWidth <= availableWidth) {
+            if (this.height !== undefined) {
+                const lineTop = this.lineOffset(initialX, initialY)
+                if ((lineTop + font.size) > this.height) {
+                    return { x: initialX, y: initialY, command: this.context!.generator.commandGroup([]) }
+                }
+            }
             const end = this.advanceChar(initialX, initialY, currentTextFullWidth)
             return {
                 x: end.x,
@@ -370,6 +376,12 @@ export default class Text extends RotatableLabelField implements PositionedField
         let finalY = y
 
         do {
+            // Skip this line if it would overflow the height constraint
+            if (this.height !== undefined) {
+                const lineTop = this.lineOffset(x, y)
+                if ((lineTop + font.size) > this.height) break
+            }
+
             // This will be the last row of the text.
             if(remainingContentWidth < availableWidth) {
                 const end = this.advanceChar(x, y, remainingContentWidth)
@@ -500,7 +512,7 @@ export default class Text extends RotatableLabelField implements PositionedField
                 const thisRow = remainingContent.substring(0, rowEndIndex + 1)
                 commands.push(this.textCommand(thisRow, x, y, font, features))
 
-                if(nextRowStartIndex == remainingContent.length) {
+                {
                     const end = this.advanceChar(x, y, this.textWidthFunction(thisRow, font))
                     finalX = end.x
                     finalY = end.y
