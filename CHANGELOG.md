@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.13.7
+
+### Patch Changes
+
+- f7076ca: Fix text height limit
+
 ## 0.13.6
 
 ### Patch Changes
