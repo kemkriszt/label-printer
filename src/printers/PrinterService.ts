@@ -4,6 +4,9 @@ import NetworkDevice from "@/helpers/NetworkDevice"
 import TSPLPrinter from "./TSPLPrinter"
 import ZPLPrinter from "./ZPLPrinter"
 import Printer from "./Printer"
+import { PrinterLanguage } from "@/commands"
+import { LabelDirection } from "@/commands/tspl"
+import { Label } from "@/labels"
 
 export type PrinterServiceUsbConnectOptions = {
     vendorId?: number
@@ -128,6 +131,30 @@ export class PrinterService {
         const ok = await TSPLPrinter.try(device)
         if(!ok) return undefined
         return new TSPLPrinter(device)
+    }
+
+    /**
+     * Generate the print code for a label and write it to a file.
+     * Useful for debugging or sending commands via an external tool.
+     *
+     * Note: This is a Node.js-only operation.
+     */
+    static async printToFile(
+        filePath: string,
+        label: Label,
+        language: PrinterLanguage,
+        sets: number,
+        gap: number,
+        copiesPerSet: number = 1,
+        direction: LabelDirection = "normal",
+        mirror: boolean = false,
+        gapOffset: number = 0
+    ): Promise<void> {
+        const command = await label.fullPrintCommand(language, gap, direction, sets, copiesPerSet, mirror, gapOffset)
+        const fs = await import("fs/promises")
+        const path = await import("path")
+        await fs.mkdir(path.dirname(filePath), { recursive: true })
+        await fs.writeFile(filePath, command.commandBytes)
     }
 
     /**
