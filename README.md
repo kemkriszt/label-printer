@@ -14,7 +14,7 @@ This package provides a TypeScript/JavaScript API to:
 ## Installation
 
 ```bash
-npm install label-printer
+npm install label-printer 
 ```
 
 ## Main exports
