@@ -38,7 +38,6 @@ export default async (): Promise<labels.Label> => {
 
     text.setFont({name: fontName, size: fontSize})
     text.setMultiLine(textWidth)
-
     label.add(text, line, image, line2)
     // label.setOrientation("right")
 
