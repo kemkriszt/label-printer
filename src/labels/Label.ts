@@ -1,3 +1,4 @@
+import subsetFont from "subset-font";
 import { Command, Dimension, PrinterLanguage } from "@/commands";
 import Printable, { PrintConfig } from "./Printable";
 import { UnitSystem } from "@/commands";
@@ -189,7 +190,7 @@ export default class Label extends Printable {
         }
 
         const commands = [
-            this.fontUploadCommands(generator),
+            await this.fontUploadCommands(generator),
             generator.setUp(
                 finalDimations.width, 
                 finalDimations.height, 
@@ -205,20 +206,22 @@ export default class Label extends Printable {
         return commands
     }
 
-    private fontUploadCommands(generator: CommandGenerator<any>): Command {
+    private async fontUploadCommands(generator: CommandGenerator<any>): Promise<Command> {
+        const text = this.container.collectCharacters()
         const families = Object.keys(this.fonts)
-        const commands = families.flatMap(family => {
+        const commands = await Promise.all(families.flatMap(family => {
             const familyFonts = this.fonts[family].fonts
             const fontNames = Object.keys(familyFonts)
 
-            return fontNames.map(name => {
+            return fontNames.map(async name => {
                 const font = familyFonts[name]
-                const fileName = font.alias
-
                 // @ts-ignore
-                return generator.upload(fileName, font.data)
+                const data: ArrayBuffer = text.length > 0
+                    ? (await subsetFont(Buffer.from(font.data), text, { targetFormat: "truetype" })).buffer
+                    : font.data
+                return generator.upload(font.alias, data)
             })
-        })
+        }))
 
         return generator.commandGroup(commands)
     }
