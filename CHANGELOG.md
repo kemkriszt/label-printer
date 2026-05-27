@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.13.10
+
+### Patch Changes
+
+- 4a9df46: Roll back with font subset
+
 ## 0.13.9
 
 ### Patch Changes
