@@ -8,9 +8,7 @@ import CommandGenerator from "@/commands/CommandGenerator";
 import * as fontkit from "fontkit"
 import RotatableContainer from "./RotatableContainer";
 import { unitToDot } from "@/helpers/UnitUtils";
-import { subsetFontData, setSubsetWasm } from "@/helpers/FontSubsetter";
-
-export { setSubsetWasm };
+import subsetFont from "subset-font";
 
 const DEFAULT_FONT_WEIGHT = 400
 const DEFAULT_FONT_STYLE = "normal"
@@ -218,7 +216,9 @@ export default class Label extends Printable {
             return fontNames.map(async name => {
                 const font = familyFonts[name]
                 // @ts-ignore
-                const data = await subsetFontData(font.data, text)
+                const data: ArrayBuffer = text.length > 0
+                    ? (await subsetFont(Buffer.from(font.data), text, { targetFormat: "truetype" })).buffer
+                    : font.data
                 return generator.upload(font.alias, data)
             })
         }))
