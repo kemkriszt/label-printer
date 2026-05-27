@@ -359,31 +359,6 @@ Font notes:
 - If you want bold text, register a `weight: 700` variant.
 - When using formatted text (`<b>...</b>`), the library will request `weight: 700`.
 
-#### Font subsetting
-
-Custom TTF files can be several hundred kilobytes each. On memory-constrained printers (e.g. TE200 with ~256 KB of user DRAM), uploading a full font file causes printing to silently fail.
-
-The library solves this by automatically subsetting registered fonts to only the characters present in the label before uploading them. A typical subset for a short label is a few kilobytes.
-
-**Node.js** — subsetting happens automatically with no extra setup.
-
-**Browser** — subsetting requires the `hb-subset.wasm` binary to be available. Copy it to your public/static assets folder once:
-
-```bash
-cp node_modules/harfbuzzjs/hb-subset.wasm public/hb-subset.wasm
-```
-
-Then call `setSubsetWasm` once at app startup before any label is printed:
-
-```ts
-import { setSubsetWasm } from "label-printer"
-
-const res = await fetch("/hb-subset.wasm")
-setSubsetWasm(await res.arrayBuffer())
-```
-
-If `setSubsetWasm` is never called in the browser, the library falls back to uploading the full font — nothing breaks, but memory-constrained printers may not print.
-
 # Update package
 
 - Make changes on feature branch.
